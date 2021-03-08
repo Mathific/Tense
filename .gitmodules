@@ -1,0 +1,3 @@
+[submodule "blasw"]
+	path = blasw
+	url = https://github.com/Mathific/Blasw.git
