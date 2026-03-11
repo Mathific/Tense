@@ -1,6 +1,6 @@
 # BSD 3-Clause License
 #
-# Copyright (c) 2021, Shahriar Rezghi <shahriar25.ss@gmail.com>
+# Copyright (c) 2021-2026, Shahriar Rezghi <shahriar.rezghi.sh@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,10 +41,12 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 
 set(TENSE_VERSION ${PROJECT_VERSION} CACHE INTERNAL "")
-option(TENSE_NATIVE "Build for Native Architecture" ON)
-option(TENSE_TESTS "Build Tense Tests" ${TENSE_MASTER})
-option(TENSE_EXAMPLES "Build Tense Examples" ${TENSE_MASTER})
-option(TENSE_INSTALL "Install Tense Library" ${TENSE_MASTER})
+option(TENSE_ENABLE_FLAGS "Build for Native Architecture" ON)
+option(TENSE_ENABLE_TESTS "Build Tense Tests" ${TENSE_MASTER})
+option(TENSE_ENABLE_EXAMPLES "Build Tense Examples" ${TENSE_MASTER})
+option(TENSE_ENABLE_INSTALL "Install Tense Library" ${TENSE_MASTER})
+option(TENSE_ENABLE_BLAS "Enable BLAS support" ON)
+option(TENSE_ENABLE_OPENMP "Enable OpenMP Support" ON)
 
 # Files
 configure_file(
@@ -59,34 +61,37 @@ file(GLOB TENSOR_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tense/tensor/*.h")
 
 # Library
-find_package(OpenMP REQUIRED)
-option(BLASW_INSTALL "" ${TENSE_MASTER})
-add_subdirectory(blasw)
-
 add_library(Tense INTERFACE)
-target_link_libraries(Tense INTERFACE
-    OpenMP::OpenMP_CXX BLASW::BLASW)
 target_include_directories(Tense INTERFACE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/gen/>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/>")
-target_compile_options(Tense INTERFACE
-    # "-Rpass=loop-vectorize"
-    # "-Rpass-missed=loop-vectorize"
-    # "-Rpass-analysis=loop-vectorize"
-    "-ffast-math")
+# target_compile_options(Tense INTERFACE
+#     "-Rpass=loop-vectorize"
+#     "-Rpass-missed=loop-vectorize"
+#     "-Rpass-analysis=loop-vectorize")
 
-if(TENSE_NATIVE)
-    target_compile_options(Tense INTERFACE "-march=native")
-    message("Tense Native Architecture Enabled!")
-else()
-    message("Tense Native Architecture Disabled!")
+if(TENSE_ENABLE_OPENMP)
+    find_package(OpenMP REQUIRED)
+    target_link_libraries(Tense INTERFACE OpenMP::OpenMP_CXX)
+    target_compile_definitions(Tense INTERFACE TENSE_USE_OPENMP)
+endif()
+
+if(TENSE_ENABLE_BLAS)
+    option(BLASW_INSTALL "" ${TENSE_MASTER})
+    add_subdirectory(blasw)
+    target_link_libraries(Tense INTERFACE BLASW::BLASW)
+    target_compile_definitions(Tense INTERFACE TENSE_USE_BLAS)
+endif()
+
+if(TENSE_NATIVE_FLAGS)
+    target_compile_options(Tense INTERFACE "-march=native" "-ffast-math")
 endif()
 
 add_library(Tense::Tense ALIAS Tense)
 
 # Installation
-if(TENSE_INSTALL)
+if(TENSE_ENABLE_INSTALL)
     install(FILES ${HEADERS}
         DESTINATION include/tense)
     install(FILES ${MATRIX_HEADERS}
@@ -127,7 +132,7 @@ else()
     message("Tense Installation Disabled!")
 endif()
 
-if(TENSE_TESTS)
+if(TENSE_ENABLE_TESTS)
     if(WIN32)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
         set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -148,7 +153,7 @@ else()
     message("Tense Tests Disabled!")
 endif()
 
-if(TENSE_EXAMPLES)
+if(TENSE_ENABLE_EXAMPLES)
     add_executable(LeastSquares example/least_squares.cpp)
     target_link_libraries(LeastSquares PUBLIC Tense::Tense)
 

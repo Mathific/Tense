@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  *
- * Copyright (c) 2021, Shahriar Rezghi <shahriar25.ss@gmail.com>
+ * Copyright (c) 2021-2026, Shahriar Rezghi <shahriar.rezghi.sh@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -206,7 +206,7 @@ struct Eval
     static void eval(Expr1 &expr1, const Expr2 &expr2)
     {
         auto size = Helper::elems(expr1.shape());
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
         for (Size i = 0; i < size; ++i) expr1[i] = expr2[i];
     }
 };

@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  *
- * Copyright (c) 2021, Shahriar Rezghi <shahriar25.ss@gmail.com>
+ * Copyright (c) 2021-2026, Shahriar Rezghi <shahriar.rezghi.sh@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,6 +57,12 @@
                << ".";                                                                                             \
         throw std::runtime_error(stream.str());                                                                    \
     }
+
+#ifdef TENSE_USE_OPENMP
+#define TENSE_PARALLEL_FOR _Pragma("omp parallel for")
+#else
+#define TENSE_PARALLEL_FOR
+#endif
 
 namespace Tense
 {

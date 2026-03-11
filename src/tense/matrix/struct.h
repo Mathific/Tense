@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  *
- * Copyright (c) 2021, Shahriar Rezghi <shahriar25.ss@gmail.com>
+ * Copyright (c) 2021-2026, Shahriar Rezghi <shahriar.rezghi.sh@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -217,11 +217,11 @@ struct Eval
     {
         auto rows = expr1.rows(), cols = expr1.cols();
         if constexpr (std::is_same<typename Expr1::Major, Col>::value)
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
             for (Size j = 0; j < cols; ++j)
                 for (Size i = 0; i < rows; ++i) expr1(i, j) = expr2;
         else
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
             for (Size i = 0; i < rows; ++i)
                 for (Size j = 0; j < cols; ++j) expr1(i, j) = expr2;
     }
@@ -232,11 +232,11 @@ struct Eval
         auto rows = expr1.rows(), cols = expr1.cols();
 
         if constexpr (std::is_same<typename Expr1::Major, Col>::value)
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
             for (Size j = 0; j < cols; ++j)
                 for (Size i = 0; i < rows; ++i) expr1(i, j) = expr2(i, j);
         else
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
             for (Size i = 0; i < rows; ++i)
                 for (Size j = 0; j < cols; ++j) expr1(i, j) = expr2(i, j);
     }

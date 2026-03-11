@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  *
- * Copyright (c) 2021, Shahriar Rezghi <shahriar25.ss@gmail.com>
+ * Copyright (c) 2021-2026, Shahriar Rezghi <shahriar.rezghi.sh@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,12 +32,15 @@
 
 #pragma once
 
-#include <blasw/blasw.h>
-#include <tense/matrix/struct.h>
-
 #include <algorithm>
 #include <numeric>
 #include <random>
+
+#include <tense/matrix/struct.h>
+
+#ifdef TENSE_USE_BLAS
+#include <blasw/blasw.h>
+#endif
 
 namespace Tense::MatrixImpl
 {
@@ -52,7 +55,7 @@ void rsort(Expr1& expr1, Func func)
     if constexpr (std::is_same<Major, Col>::value)
         throw std::runtime_error("Not Implemented.");
     else
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
         for (Size i = 0; i < rows; ++i)
         {
             auto data = &expr1(i, 0);
@@ -67,7 +70,7 @@ void csort(Expr1& expr1, Func func)
     Size rows = expr1.rows(), cols = expr1.cols();
 
     if constexpr (std::is_same<Major, Col>::value)
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
         for (Size j = 0; j < cols; ++j)
         {
             auto data = &expr1(0, j);
@@ -95,7 +98,7 @@ auto rsortidx(Expr1& expr1, Func func)
     if constexpr (std::is_same<Major, Col>::value)
         throw std::runtime_error("Not Implemented.");
     else
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
         for (Size i = 0; i < rows; ++i)
         {
             auto comp = [&](auto j, auto k) { return func(expr1(i, j), expr1(i, k)); };
@@ -115,7 +118,7 @@ auto csortidx(Expr1& expr1, Func func)
     Matrix<Major, Size> index(rows, cols);
 
     if constexpr (std::is_same<Major, Col>::value)
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
         for (Size j = 0; j < cols; ++j)
         {
             auto comp = [&](auto i, auto k) { return func(expr1(i, j), expr1(k, j)); };
@@ -141,7 +144,7 @@ void rshuffle(Expr1& expr1)
     if constexpr (std::is_same<Major, Col>::value)
         throw std::runtime_error("Not Implemented.");
     else
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
         for (Size i = 0; i < rows; ++i)
         {
             auto data = &expr1(i, 0);
@@ -159,7 +162,7 @@ void cshuffle(Expr1& expr1)
     std::mt19937 generator(random());
 
     if constexpr (std::is_same<Major, Col>::value)
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
         for (Size j = 0; j < cols; ++j)
         {
             auto data = &expr1(0, j);
@@ -193,7 +196,7 @@ auto rshuffleidx(Expr1& expr1)
     if constexpr (std::is_same<Major, Col>::value)
         throw std::runtime_error("Not Implemented.");
     else
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
         for (Size i = 0; i < rows; ++i)
         {
             auto data = &index(i, 0);
@@ -215,7 +218,7 @@ auto cshuffleidx(Expr1& expr1)
     std::mt19937 generator(random());
 
     if constexpr (std::is_same<Major, Col>::value)
-#pragma omp parallel for
+TENSE_PARALLEL_FOR
         for (Size j = 0; j < cols; ++j)
         {
             auto data = &index(0, j);
@@ -244,6 +247,7 @@ void multiply(const Expr1& first, const Expr2& second, Expr3& target)
 }
 }  // namespace Backend
 
+#ifdef TENSE_USE_BLAS
 namespace External
 {
 template <typename T>
@@ -742,4 +746,83 @@ auto svd(const Expr1& expr1, bool _left, bool _right)
     return std::make_tuple(singular, left, right);
 }
 }  // namespace External
+
+#else
+
+namespace External
+{
+template <typename Expr1, typename Expr2, typename Expr3>
+Expr3 multiply(const Expr1& expr1, const Expr2& expr2, Expr3& expr)
+{
+    throw std::runtime_error("Not Implemented.");
+}
+
+template <typename Expr1>
+Expr1 inverse(const Expr1& expr1)
+{
+    throw std::runtime_error("Not Implemented.");
+}
+
+template <typename Expr1>
+Expr1 determinant(const Expr1& expr1)
+{
+    throw std::runtime_error("Not Implemented.");
+}
+
+template <typename Expr1>
+Expr1 lufact(const Expr1& expr1)
+{
+    throw std::runtime_error("Not Implemented.");
+}
+
+template <typename Expr1>
+Expr1 qrfact(const Expr1& expr1)
+{
+    throw std::runtime_error("Not Implemented.");
+}
+
+template <typename Expr1>
+Expr1 cholesky(const Expr1& expr1)
+{
+    throw std::runtime_error("Not Implemented.");
+}
+
+template <typename Expr1, typename Expr2>
+Expr1 solve(const Expr1& expr1, const Expr2& expr2)
+{
+    throw std::runtime_error("Not Implemented.");
+}
+
+template <typename Expr1>
+Expr1 eigen(const Expr1& expr1, bool _left, bool _right)
+{
+    throw std::runtime_error("Not Implemented.");
+}
+
+template <typename Expr1>
+Expr1 schur(const Expr1& expr1, bool _vectors)
+{
+    throw std::runtime_error("Not Implemented.");
+}
+
+template <typename Expr1, typename _T>
+Expr1 rank(const Expr1& expr1, _T epsilon)
+{
+    throw std::runtime_error("Not Implemented.");
+}
+
+template <typename Expr1, typename Expr2>
+Expr1 lsquares(const Expr1& expr1, const Expr2& expr2)
+{
+    throw std::runtime_error("Not Implemented.");
+}
+
+template <typename Expr1>
+Expr1 svd(const Expr1& expr1, bool _left, bool _right)
+{
+    throw std::runtime_error("Not Implemented.");
+}
+}
+#endif
+
 }  // namespace Tense::MatrixImpl
