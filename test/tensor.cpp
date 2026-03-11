@@ -149,23 +149,23 @@ TYPED_TEST(Tensor1, Select)
     using Type = typename Ten::Type;
 
     Ten M1({3}, {1, 2, 3}), M2({2, 2}, {1, 2, 3, 4}), M3({2, 2, 2}, {1, 2, 3, 4, 5, 6, 7, 8});
-    EXPECT_EQ(M1({0}), 1);
-    EXPECT_EQ(M1({1}), 2);
-    EXPECT_EQ(M1({2}), 3);
+    EXPECT_EQ(M1(0), 1);
+    EXPECT_EQ(M1(1), 2);
+    EXPECT_EQ(M1(2), 3);
 
-    EXPECT_EQ(M2({0, 0}), 1);
-    EXPECT_EQ(M2({0, 1}), 2);
-    EXPECT_EQ(M2({1, 0}), 3);
-    EXPECT_EQ(M2({1, 1}), 4);
+    EXPECT_EQ(M2(0, 0), 1);
+    EXPECT_EQ(M2(0, 1), 2);
+    EXPECT_EQ(M2(1, 0), 3);
+    EXPECT_EQ(M2(1, 1), 4);
 
-    EXPECT_EQ(M3({0, 0, 0}), 1);
-    EXPECT_EQ(M3({0, 0, 1}), 2);
-    EXPECT_EQ(M3({0, 1, 0}), 3);
-    EXPECT_EQ(M3({0, 1, 1}), 4);
-    EXPECT_EQ(M3({1, 0, 0}), 5);
-    EXPECT_EQ(M3({1, 0, 1}), 6);
-    EXPECT_EQ(M3({1, 1, 0}), 7);
-    EXPECT_EQ(M3({1, 1, 1}), 8);
+    EXPECT_EQ(M3(0, 0, 0), 1);
+    EXPECT_EQ(M3(0, 0, 1), 2);
+    EXPECT_EQ(M3(0, 1, 0), 3);
+    EXPECT_EQ(M3(0, 1, 1), 4);
+    EXPECT_EQ(M3(1, 0, 0), 5);
+    EXPECT_EQ(M3(1, 0, 1), 6);
+    EXPECT_EQ(M3(1, 1, 0), 7);
+    EXPECT_EQ(M3(1, 1, 1), 8);
 }
 
 TYPED_TEST(Tensor1, All)
@@ -211,13 +211,13 @@ TYPED_TEST(Tensor1, Index)
 
     Ten M1({2, 3, 3}, {2, 0, 1, 0, 1, 1, 0, 2, 3,  //
                        1, 2, 2, 1, 0, 1, 2, 1, 0});
-    Check(M1.maxi(2), STen({2, 3}, {0, 1, 2, 1, 0, 0}));
-    Check(M1.maxi(1), STen({2}, {8, 1}));
-    Check(M1.maxi(0), STen({1}, {8}));
+    Check(M1.maxidx(2), STen({2, 3}, {0, 1, 2, 1, 0, 0}));
+    Check(M1.maxidx(1), STen({2}, {8, 1}));
+    Check(M1.maxidx(0), STen({1}, {8}));
 
-    Check(M1.mini(2), STen({2, 3}, {1, 0, 0, 0, 1, 2}));
-    Check(M1.mini(1), STen({2}, {1, 4}));
-    Check(M1.mini(0), STen({1}, {1}));
+    Check(M1.minidx(2), STen({2, 3}, {1, 0, 0, 0, 1, 2}));
+    Check(M1.minidx(1), STen({2}, {1, 4}));
+    Check(M1.minidx(0), STen({1}, {1}));
 }
 
 TYPED_TEST(Tensor1, Cat)

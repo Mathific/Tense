@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include <random>
 
 namespace Tense::MatrixImpl
 {
@@ -74,6 +75,14 @@ void csort(Expr1& expr1, Func func)
         }
     else
         throw std::runtime_error("Not Implemented.");
+}
+
+template <typename Expr1, typename Func>
+void sort(Expr1& expr1, Func func)
+{
+    auto size = expr1.size();
+    auto data = &expr1(0, 0);
+    std::sort(data, data + size, func);
 }
 
 template <typename Expr1, typename Func>
@@ -126,6 +135,9 @@ void rshuffle(Expr1& expr1)
     using Major = typename Expr1::Major;
     Size rows = expr1.rows(), cols = expr1.cols();
 
+    std::random_device random;
+    std::mt19937 generator(random());
+
     if constexpr (std::is_same<Major, Col>::value)
         throw std::runtime_error("Not Implemented.");
     else
@@ -133,7 +145,7 @@ void rshuffle(Expr1& expr1)
         for (Size i = 0; i < rows; ++i)
         {
             auto data = &expr1(i, 0);
-            std::random_shuffle(data, data + cols);
+            std::shuffle(data, data + cols, generator);
         }
 }
 
@@ -143,12 +155,15 @@ void cshuffle(Expr1& expr1)
     using Major = typename Expr1::Major;
     Size rows = expr1.rows(), cols = expr1.cols();
 
+    std::random_device random;
+    std::mt19937 generator(random());
+
     if constexpr (std::is_same<Major, Col>::value)
 #pragma omp parallel for
         for (Size j = 0; j < cols; ++j)
         {
             auto data = &expr1(0, j);
-            std::random_shuffle(data, data + rows);
+            std::shuffle(data, data + rows, generator);
         }
     else
         throw std::runtime_error("Not Implemented.");
@@ -157,9 +172,12 @@ void cshuffle(Expr1& expr1)
 template <typename Expr1>
 void shuffle(Expr1& expr1)
 {
+    std::random_device random;
+    std::mt19937 generator(random());
+
     auto size = expr1.size();
     auto data = &expr1(0, 0);
-    std::random_shuffle(data, data + size);
+    std::shuffle(data, data + size, generator);
 }
 
 template <typename Expr1>
@@ -169,6 +187,9 @@ auto rshuffleidx(Expr1& expr1)
     Size rows = expr1.rows(), cols = expr1.cols();
     Matrix<Major, Size> index(rows, cols);
 
+    std::random_device random;
+    std::mt19937 generator(random());
+
     if constexpr (std::is_same<Major, Col>::value)
         throw std::runtime_error("Not Implemented.");
     else
@@ -177,7 +198,7 @@ auto rshuffleidx(Expr1& expr1)
         {
             auto data = &index(i, 0);
             std::iota(data, data + cols, 0);
-            std::random_shuffle(data, data + cols);
+            std::shuffle(data, data + cols, generator);
         }
 
     return index;
@@ -190,13 +211,16 @@ auto cshuffleidx(Expr1& expr1)
     Size rows = expr1.rows(), cols = expr1.cols();
     Matrix<Major, Size> index(rows, cols);
 
+    std::random_device random;
+    std::mt19937 generator(random());
+
     if constexpr (std::is_same<Major, Col>::value)
 #pragma omp parallel for
         for (Size j = 0; j < cols; ++j)
         {
             auto data = &index(0, j);
             std::iota(data, data + rows, 0);
-            std::random_shuffle(data, data + rows);
+            std::shuffle(data, data + rows, generator);
         }
     else
         throw std::runtime_error("Not Implemented.");

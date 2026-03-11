@@ -186,13 +186,13 @@ public:
     template <typename Func, typename Expr2, typename = IsExpr<Expr2>>
     auto where(Func func, const Expr2 &expr2) const
     {
-        TENSE_TASSERT(this->shape(), ==, expr2.shape(), "where", "Shape of tensors must be equal")
+        TENSE_TASSERT(derived().shape(), ==, expr2.shape(), "where", "Shape of tensors must be equal")
         return FEWhere<Derived, Expr2, Func>(derived(), expr2, func);
     }
     template <typename Func, typename Expr2, typename = IsExpr<Expr2>>
     auto iwhere(Func func, const Expr2 &expr2) const
     {
-        TENSE_TASSERT(this->shape(), ==, expr2.shape(), "iwhere", "Shape of tensors must be equal")
+        TENSE_TASSERT(derived().shape(), ==, expr2.shape(), "iwhere", "Shape of tensors must be equal")
         return IEWhere<Derived, Expr2, Func>(derived(), expr2, func);
     }
 
@@ -280,7 +280,7 @@ public:
     template <typename Expr2, typename = IsExpr<Expr2>>
     auto cov(const Expr2 &expr2, Size dof = 0, Size dim = 0) const
     {
-        TENSE_TASSERT(this->shape(), ==, expr2.shape(), "cov", "Shapes of tensors must be the same")
+        TENSE_TASSERT(derived().shape(), ==, expr2.shape(), "cov", "Shapes of tensors must be the same")
 
         auto size = Helper::check(derived().shape(), dim);
         auto _expr1 = derived().mul(expr2).sum(dim);
@@ -415,7 +415,7 @@ public:
     {
         return dist(shape, std::geometric_distribution(p));
     }
-    static auto pascal(const Shape &shape, int k, double p = 0.5)  //
+    static auto _pascal(const Shape &shape, int k, double p = 0.5)  //
     {
         return dist(shape, std::negative_binomial_distribution(k, p));
     }

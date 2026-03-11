@@ -107,7 +107,7 @@ public:
     Tensor(const Derived &other) = default;
     Derived &operator=(const Derived &other) = default;
     Tensor(const Shape &shape, const T &val = T(0)) : _shared(new Data(shape, val)) {}
-    Tensor(const Shape &shape, std::vector<T> list) : _shared(new Data(shape, list)) {}
+    Tensor(const Shape &shape, const std::initializer_list<T> &list) : _shared(new Data(shape, list)) {}
     Tensor(const Shape &shape, T *data, Mode mode = Mode::Copy) : _shared(new Data(shape, data, mode)) {}
 
     template <typename Expr2, typename = IsExpr<Expr2>>

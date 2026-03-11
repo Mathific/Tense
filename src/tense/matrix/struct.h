@@ -34,7 +34,6 @@
 
 #include <tense/struct.h>
 
-#include <complex>
 #include <type_traits>
 
 namespace Tense::MatrixImpl
@@ -197,6 +196,7 @@ struct Eval
     static void assign(Expr1 &expr1, IL2D<typename Expr1::Type> list)
     {
         Size rows = expr1.rows(), cols = expr1.cols();
+        TENSE_MASSERT(rows, ==, list.size(), "assign", "2D initializer list input has different length")
 
         Size i = 0;
         for (auto row : list)

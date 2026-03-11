@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Project
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 project(Tense VERSION 0.1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -138,7 +138,7 @@ if(TENSE_TESTS)
     add_subdirectory(./test/gtest/)
 
     add_executable(tests
-        "test/tests.cpp" #"test/matrix.cpp" "test/tensor.cpp"
+        "test/tests.cpp" "test/matrix.cpp" "test/tensor.cpp"
         ${HEADERS} ${MATRIX_HEADERS} ${TENSOR_HEADERS})
     target_link_libraries(tests PUBLIC
         Tense::Tense gtest gtest_main)

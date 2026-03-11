@@ -904,7 +904,7 @@ public:
     {
         return dist(rows, cols, std::geometric_distribution(p));
     }
-    static auto pascal(Size rows, Size cols, int k, double p = 0.5)
+    static auto _pascal(Size rows, Size cols, int k, double p = 0.5)
     {
         return dist(rows, cols, std::negative_binomial_distribution(k, p));
     }
@@ -969,6 +969,13 @@ public:
         Backend::csort(target, func);
         return target;
     }
+    template <typename Func>
+    auto sort(Func func) const
+    {
+        auto target = derived().copy();
+        Backend::sort(target, func);
+        return target;
+    }
     auto rsort() const
     {
         return rsort([](auto i, auto j) { return i < j; });
@@ -976,6 +983,10 @@ public:
     auto csort() const
     {
         return csort([](auto i, auto j) { return i < j; });
+    }
+    auto sort() const
+    {
+        return sort([](auto i, auto j) { return i < j; });
     }
 
     template <typename Func>
@@ -996,6 +1007,7 @@ public:
     {
         return csortidx([](auto i, auto j) { return i < j; });
     }
+    // TODO rsortidx?
 
     auto rshuffle() const
     {

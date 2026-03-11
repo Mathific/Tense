@@ -433,16 +433,16 @@ public:
 };
 
 template<typename Expr1>
-auto MaxIdx(const Expr1 &expr1)
+auto MaxIdx(const Expr1 &expr1, const Shape &shape, Size size)
 {
     auto func = [](auto val1, auto val2) { return val1 > val2; };
-    return Redux<Expr1, decltype(func)>(expr1, func);
+    return Redux<Expr1, decltype(func)>(expr1, func, shape, size);
 }
 template<typename Expr1>
-auto MinIdx(const Expr1 &expr1)
+auto MinIdx(const Expr1 &expr1, const Shape &shape, Size size)
 {
     auto func = [](auto val1, auto val2) { return val1 < val2; };
-    return Redux<Expr1, decltype(func)>(expr1, func);
+    return Redux<Expr1, decltype(func)>(expr1, func, shape, size);
 }
 // clang-format on
 }
