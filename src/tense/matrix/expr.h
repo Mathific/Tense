@@ -88,8 +88,8 @@
     template <typename _Expr, typename = IsExpr<_Expr>, typename Temp = Status, typename = IsWritable<Temp>> \
     auto& operator OP## = (const _Expr& expr)                                                                \
     {                                                                                                        \
-        TENSE_MASSERT(rows(), ==, expr.rows(), "operator" << #OP, "Rows of matrices must be equal")          \
-        TENSE_MASSERT(cols(), ==, expr.cols(), "operator" << #OP, "Cols of matrices must be equal")          \
+        TENSE_MASSERT(rows(), ==, expr.rows(), "operator" + #OP, "Rows of matrices must be equal")           \
+        TENSE_MASSERT(cols(), ==, expr.cols(), "operator" + #OP, "Cols of matrices must be equal")           \
         Eval::eval(*this, *this OP expr);                                                                    \
         return *this;                                                                                        \
     }
@@ -386,14 +386,14 @@ public:
 template <typename Expr1>
 EXPR(RIndex, typename Expr1::Status, typename Expr1::Major, typename Expr1::Type, Expr1, _rows, _cols)
     typename Alias<Expr1, Status>::Type _expr1;
-    Size _rb, _rs, _cb, _cs, _rows, _cols;
+    SSize _rb, _rs, _cb, _cs, _rows, _cols;
 
 public:
     RIndex(const Expr1 &expr1, Cut rows, Cut cols)
         : _expr1(expr1), _rb(rows.start), _rs(rows.step), _cb(cols.start), _cs(cols.step)
     {
-        _rows = (rows.end - rows.start) / rows.step;
-        _cols = (cols.end - cols.start) / cols.step;
+        _rows = (rows.end - rows.start + rows.step - 1) / rows.step;
+        _cols = (cols.end - cols.start + cols.step - 1) / cols.step;
     }
     WRITABLE(return _expr1(i * _rs + _rb, j *_cs + _cb))
 };
@@ -413,7 +413,7 @@ template <typename Expr1>
 EXPR(RVIndex, typename Expr1::Status, typename Expr1::Major, typename Expr1::Type, Expr1, _rows, _cols.size())
     typename Alias<Expr1, Status>::Type _expr1;
     const std::vector<Size> _cols;
-    Size _rb, _rs, _rows;
+    SSize _rb, _rs, _rows;
 
 public:
     RVIndex(const Expr1 &expr1, Cut rows, const std::vector<Size> &cols)
@@ -428,7 +428,7 @@ template <typename Expr1>
 EXPR(VRIndex, typename Expr1::Status, typename Expr1::Major, typename Expr1::Type, Expr1, _rows.size(), _cols)
     typename Alias<Expr1, Status>::Type _expr1;
     const std::vector<Size> _rows;
-    Size _cb, _cs, _cols;
+    SSize _cb, _cs, _cols;
 
 public:
     VRIndex(const Expr1 &expr1, const std::vector<Size> &rows, Cut cols)
@@ -687,7 +687,7 @@ EXPR(IEWhere, typename SumWritable<typename Expr1::Status C typename Expr2::Stat
     const Func _func;
 
 public:
-    IEWhere(const Expr1 &expr1,  const Expr1 &expr2, Func func) : _expr1(expr1), _expr2(expr2), _func(func) {}
+    IEWhere(const Expr1 &expr1,  const Expr2 &expr2, Func func) : _expr1(expr1), _expr2(expr2), _func(func) {}
     WRITABLE(return _func(i, j) ? _expr1(i, j) : _expr2(i, j))
 };
 
@@ -755,6 +755,7 @@ EXPR(Distribution, Readable, M, T, M C T C Dist, _rows, _cols)
     std::mt19937_64 _rand;
     const Size _rows, _cols;
     Type operator()(Size i, Size j) { return Type(_dist(_rand)); }
+    // TODO not thread-safe (vector, matrix, tensor)
 
 public:
     Distribution(Size rows, Size cols, Dist dist) : _dist(std::move(dist)), _rand(rand()), _rows(rows), _cols(cols) {}
@@ -785,6 +786,7 @@ public:
 template <typename M, typename T, Size Rows, Size Cols>
 FLAGGED(Static, StaticFlag, Writable, M, T, M C T C Rows C Cols, Rows, Cols)
     T _data[Rows * Cols];
+    // TODO Alias might cause temp static to be held as reference (vector, matrix, tensor)
 
 public:
     Static(T value) { std::fill(_data, _data + Rows * Cols, value); }

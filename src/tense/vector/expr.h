@@ -76,7 +76,7 @@
     template <typename _Expr, typename = IsExpr<_Expr>, typename Temp = Status, typename = IsWritable<Temp>> \
     auto& operator OP## = (const _Expr& expr)                                                                \
     {                                                                                                        \
-        TENSE_VASSERT(size(), ==, expr.size(), "operator" << #OP, "size of vectors must be equal")           \
+        TENSE_VASSERT(size(), ==, expr.size(), "operator" + #OP, "size of vectors must be equal")            \
         Eval::eval(*this, *this OP expr);                                                                    \
         return *this;                                                                                        \
     }
@@ -150,20 +150,6 @@ public:
     }
 };
 
-template <typename Expr1, typename Func, typename FLAG>
-FLAGGED(Square, FLAG, Readable, typename Expr1::Type,
-        Expr1 C Func C FLAG, _expr1.size())
-    typename Alias<Expr1, Status>::Type _expr1;
-    const Func _func;
-
-public:
-    using Expr = Expr1;
-    const Expr1 &get() const { return _expr1; }
-
-    Square(const Expr1 &expr1, Func func) : _expr1(expr1), _func(func) {}
-    Type operator[](Size i) const { return _func(i, _expr1); }
-};
-
 template<typename Expr1, typename Func>
 EXPR(Access, typename Expr1::Status, typename Expr1::Type,
      Expr1 C Func, _expr1.size())
@@ -179,6 +165,7 @@ template <typename Expr1>
 EXPR(Repeat, Readable, typename Expr1::Type, Expr1, _size)
     typename Alias<Expr1, Status>::Type _expr1;
     const Size _size, _size2;
+    // TODO % is not performant (vector, matrix, tensor)
 
 public:
     Repeat(const Expr1 &expr1, Size size)
@@ -196,7 +183,7 @@ FLAGGED(Reduce, HeavyFlag, Readable, T, T C Expr1 C Func, 1)
 public:
     Reduce(const Expr1 &expr1, Func func, Type init)
         : _expr1(expr1), _func(func), _init(init), _size(expr1.size()) {}
-    Type operator[](Size i) const
+    Type operator[](Size) const
     {
         Type val = _init;
         for (Size i=0; i < _size; ++i) val = _func(val, _expr1[i]);
@@ -228,13 +215,13 @@ public:
 template <typename Expr1>
 EXPR(RIndex, typename Expr1::Status, typename Expr1::Type, Expr1, _size)
     typename Alias<Expr1, Status>::Type _expr1;
-    Size _b, _s, _size;
+    SSize _b, _s, _size;
 
 public:
     RIndex(const Expr1 &expr1, Cut cut)
         : _expr1(expr1), _b(cut.start), _s(cut.step)
     {
-        _size = (cut.end - cut.start) / cut.step;
+        _size = (cut.end - cut.start + cut.step - 1) / cut.step;
     }
     WRITABLE(return _expr1[i * _s + _b])
 };
@@ -296,8 +283,8 @@ public:
     Type operator[](Size i) const
     {
         Size si = i * _size;
-        for (Size i = si; i < si + _size; ++i)
-            if (!Switch::value ^ static_cast<bool>(_expr1[i])) return Switch::value;
+        for (Size j = si; j < si + _size; ++j)
+            if (!Switch::value ^ static_cast<bool>(_expr1[j])) return Switch::value;
         return !Switch::value;
     }
 };
@@ -309,7 +296,7 @@ FLAGGED(Any, HeavyFlag, Readable, bool, Switch C Expr1, 1)
 
 public:
     Any(const Expr1 &expr1) : _expr1(expr1), _size(expr1.size()) {}
-    Type operator[](Size i) const
+    Type operator[](Size) const
     {
         for (Size i = 0; i < _size; ++i)
             if (!Switch::value ^ static_cast<bool>(_expr1[i])) return Switch::value;
@@ -388,7 +375,7 @@ EXPR(IEWhere, typename SumWritable<typename Expr1::Status C typename Expr2::Stat
     const Func _func;
 
 public:
-    IEWhere(const Expr1 &expr1,  const Expr1 &expr2, Func func) : _expr1(expr1), _expr2(expr2), _func(func) {}
+    IEWhere(const Expr1 &expr1,  const Expr2 &expr2, Func func) : _expr1(expr1), _expr2(expr2), _func(func) {}
     WRITABLE(return _func(i) ? _expr1[i] : _expr2[i])
 };
 
@@ -481,7 +468,7 @@ template<typename Expr1>
 auto Turn(const Expr1 &expr1, Size _i)
 {
     Size size = expr1.size();
-    auto func = [size, _i](auto i, const auto &expr) { return expr((i + _i) % size); };
+    auto func = [size, _i](auto i, const auto &expr) { return expr[(i + _i) % size]; };
     return Access<Expr1, decltype(func)>(expr1, func);
 }
 
@@ -509,15 +496,14 @@ template<typename Expr1>
 auto Flip(const Expr1 &expr1)
 {
     Size size = expr1.size() - 1;
-    auto func = [size](auto i, const auto &expr) { return expr(size - i); };
+    auto func = [size](auto i, const auto &expr) { return expr[size - i]; };
     return Access<Expr1, decltype(func)>(expr1, func);
 }
 // clang-format on
-}  // namespace Tense::MatrixImpl
+}  // namespace Tense::VectorImpl
 
 #undef C
 #undef EXPR
 #undef FLAGGED
-#undef SQUARE
 #undef OPERATOR
 #undef WRITABLE

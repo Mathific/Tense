@@ -121,7 +121,7 @@
 namespace Tense::MatrixImpl
 {
 template <typename Major, typename Type, typename Derived>
-class Base : Expr
+class Base : public Expr
 {
     const Derived& derived() const { return *static_cast<const Derived*>(this); }
     Size rows() const { return static_cast<const Derived*>(this)->rows(); }
@@ -260,26 +260,29 @@ public:
 
     auto index(Cut rows, Cut cols) const
     {
-        if (rows.step == 0) rows = {this->rows()};
-        if (cols.step == 0) cols = {this->cols()};
-        TENSE_MASSERT(rows.start, <=, this->rows(), "index", "Input row start can't be out of range")
-        TENSE_MASSERT(rows.end, <=, this->rows(), "index", "Input row end can't be out of range")
-        TENSE_MASSERT(cols.start, <=, this->cols(), "index", "Input col start can't be out of range")
-        TENSE_MASSERT(cols.end, <=, this->cols(), "index", "Input col end can't be out of range")
+        auto _rows = SSize(this->rows()), _cols = SSize(this->cols());
+        if (rows.step == 0) rows = Cut{_rows};
+        if (cols.step == 0) cols = Cut{_cols};
+        TENSE_MASSERT(rows.start, <=, _rows, "index", "Input row start can't be out of range")
+        TENSE_MASSERT(rows.end, <=, _rows, "index", "Input row end can't be out of range")
+        TENSE_MASSERT(cols.start, <=, _cols, "index", "Input col start can't be out of range")
+        TENSE_MASSERT(cols.end, <=, _cols, "index", "Input col end can't be out of range")
         return RIndex<Derived>(derived(), rows, cols);
     }
     auto index(Cut rows, const std::vector<Size>& cols) const
     {
-        if (rows.step == 0) rows = {this->rows()};
-        TENSE_MASSERT(rows.start, <=, this->rows(), "index", "Input row start can't be out of range")
-        TENSE_MASSERT(rows.end, <=, this->rows(), "index", "Input row end can't be out of range")
+        auto _rows = SSize(this->rows());
+        if (rows.step == 0) rows = Cut{_rows};
+        TENSE_MASSERT(rows.start, <=, _rows, "index", "Input row start can't be out of range")
+        TENSE_MASSERT(rows.end, <=, _rows, "index", "Input row end can't be out of range")
         return RVIndex<Derived>(derived(), rows, cols);
     }
     auto index(const std::vector<Size>& rows, Cut cols) const
     {
-        if (cols.step == 0) cols = {this->cols()};
-        TENSE_MASSERT(cols.start, <=, this->cols(), "index", "Input col start can't be out of range")
-        TENSE_MASSERT(cols.end, <=, this->cols(), "index", "Input col end can't be out of range")
+        auto _cols = SSize(this->cols());
+        if (cols.step == 0) cols = Cut{_cols};
+        TENSE_MASSERT(cols.start, <=, _cols, "index", "Input col start can't be out of range")
+        TENSE_MASSERT(cols.end, <=, _cols, "index", "Input col end can't be out of range")
         return VRIndex<Derived>(derived(), rows, cols);
     }
     auto index(const std::vector<Size>& rows, const std::vector<Size>& cols) const
@@ -793,6 +796,7 @@ public:
             return expr1.mul(expr2).sum();
         else if (expr1.cols() == 1 && expr2.cols() == 1 && expr1.rows() == expr2.rows())
             return expr1.mul(expr2).sum();
+        throw std::runtime_error("Execution path shouldn't reach this");
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1294,7 +1298,7 @@ public:
 
     REDUCE0(sum, 0, val1 + val2)
     REDUCE0(prod, 1, val1* val2)
-    REDUCE0(max, std::numeric_limits<Type>::min(), std::max(val1, val2))
+    REDUCE0(max, std::numeric_limits<Type>::lowest(), std::max(val1, val2))
     REDUCE0(min, std::numeric_limits<Type>::max(), std::min(val1, val2))
     _REDUCE1(count, Size, Type, 0, val1 + (val2 == val3))
     SQUARE(diagonal, SDiagonal)
@@ -1353,6 +1357,4 @@ public:
 #undef BINARY
 #undef REDUCE0
 #undef REDUCE1
-#undef _OPERATOR0
-#undef _OPERATOR1
 #undef OPERATOR1

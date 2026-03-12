@@ -143,7 +143,7 @@ void rshuffle(Expr1& expr1)
     Size rows = expr1.rows(), cols = expr1.cols();
 
     std::random_device random;
-    std::mt19937 generator(random());
+    std::mt19937_64 generator(random());
 
     if constexpr (std::is_same<Major, Col>::value)
         throw std::runtime_error("Not Implemented.");
@@ -165,7 +165,7 @@ void cshuffle(Expr1& expr1)
     Size rows = expr1.rows(), cols = expr1.cols();
 
     std::random_device random;
-    std::mt19937 generator(random());
+    std::mt19937_64 generator(random());
 
     if constexpr (std::is_same<Major, Col>::value)
     {
@@ -184,7 +184,7 @@ template <typename Expr1>
 void shuffle(Expr1& expr1)
 {
     std::random_device random;
-    std::mt19937 generator(random());
+    std::mt19937_64 generator(random());
 
     auto size = expr1.size();
     auto data = &expr1(0, 0);
@@ -199,7 +199,7 @@ auto rshuffleidx(Expr1& expr1)
     Matrix<Major, Size> index(rows, cols);
 
     std::random_device random;
-    std::mt19937 generator(random());
+    std::mt19937_64 generator(random());
 
     if constexpr (std::is_same<Major, Col>::value)
         throw std::runtime_error("Not Implemented.");
@@ -225,7 +225,7 @@ auto cshuffleidx(Expr1& expr1)
     Matrix<Major, Size> index(rows, cols);
 
     std::random_device random;
-    std::mt19937 generator(random());
+    std::mt19937_64 generator(random());
 
     if constexpr (std::is_same<Major, Col>::value)
     {

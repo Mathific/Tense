@@ -39,19 +39,19 @@
 #include <memory>
 #include <new>
 
-#define OPERATOR(OP)                                                                                       \
-    Derived& operator OP## = (const Type& expr2)                                                           \
-    {                                                                                                      \
-        Eval::eval(*this, *this OP expr2);                                                                 \
-        return *this;                                                                                      \
-    }                                                                                                      \
-    template <typename Expr2, typename = IsExpr<Expr2>>                                                    \
-    Derived& operator OP## = (const Expr2& expr2)                                                          \
-    {                                                                                                      \
-        TENSE_MASSERT(this->rows(), ==, expr2.rows(), "operator" << #OP, "Rows of matrices must be equal") \
-        TENSE_MASSERT(this->cols(), ==, expr2.cols(), "operator" << #OP, "Cols of matrices must be equal") \
-        Eval::eval(*this, *this OP expr2);                                                                 \
-        return *this;                                                                                      \
+#define OPERATOR(OP)                                                                                      \
+    Derived& operator OP## = (const Type& expr2)                                                          \
+    {                                                                                                     \
+        Eval::eval(*this, *this OP expr2);                                                                \
+        return *this;                                                                                     \
+    }                                                                                                     \
+    template <typename Expr2, typename = IsExpr<Expr2>>                                                   \
+    Derived& operator OP## = (const Expr2& expr2)                                                         \
+    {                                                                                                     \
+        TENSE_MASSERT(this->rows(), ==, expr2.rows(), "operator" + #OP, "Rows of matrices must be equal") \
+        TENSE_MASSERT(this->cols(), ==, expr2.cols(), "operator" + #OP, "Cols of matrices must be equal") \
+        Eval::eval(*this, *this OP expr2);                                                                \
+        return *this;                                                                                     \
     }
 
 namespace Tense::MatrixImpl
@@ -67,7 +67,7 @@ class Matrix : public Base<M, T, Matrix<M, T>>
 
         ~Data()
         {
-            if (data != nullptr && owner) delete[] data;
+            if (data != nullptr && owner) ::operator delete[](data, std::align_val_t(TENSE_ALIGNMENT));
         }
         Data(Size rows, Size cols, const T& val) : rows(rows), cols(cols)
         {
@@ -100,22 +100,25 @@ public:
     Matrix() = default;
     Matrix(const Derived& other) = default;
     Derived& operator=(const Derived& other) = default;
-    Matrix(Size rows, Size cols, const T& val = T(0)) : _shared(new Data(rows, cols, val)) {}
-    Matrix(Size rows, Size cols, T* data, Mode mode = Mode::Copy) : _shared(new Data(rows, cols, data, mode)) {}
+    Matrix(Size rows, Size cols, const T& val = T(0)) : _shared(std::make_shared<Data>(rows, cols, val)) {}
+    Matrix(Size rows, Size cols, T* data, Mode mode = Mode::Copy)
+        : _shared(std::make_shared<Data>(rows, cols, data, mode))
+    {
+    }
 
     Matrix(const IL1D<T>& list)
     {
-        _shared = DataPtr(new Data(list.size(), 1, T(0)));
+        _shared = DataPtr(std::make_shared<Data>(list.size(), 1, T(0)));
         std::copy(list.begin(), list.end(), _shared->data);
     }
     Matrix(const IL2D<T>& list)
     {
         auto rows2 = list.size(), cols2 = rows2 ? list.begin()->size() : 0;
-        _shared = DataPtr(new Data(rows2, cols2, T(0)));
+        _shared = DataPtr(std::make_shared<Data>(rows2, cols2, T(0)));
         Eval::assign(*this, list);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    Matrix(const Expr2& expr) : _shared(new Data(expr.rows(), expr.cols(), T(0)))
+    Matrix(const Expr2& expr) : _shared(std::make_shared<Data>(expr.rows(), expr.cols(), T(0)))
     {
         Eval::eval(*this, expr);
     }
@@ -194,14 +197,14 @@ public:
     Derived& operator=(IL1D<Type> list)
     {
         if (!this->valid() || this->rows() != list.size() || this->cols() != 1)
-            _shared = new DataPtr(Data(list.size(), 1, T(0)));
+            _shared = std::make_shared<Data>(list.size(), 1, T(0));
         std::copy(list.begin(), list.end(), _shared->data);
     }
     Derived& operator=(IL2D<Type> list)
     {
         auto rows2 = list.size(), cols2 = rows2 ? list.begin()->size() : 0;
         if (!this->valid() || this->rows() != rows2 || this->cols() != cols2)
-            _shared = new DataPtr(Data(rows2, cols2, T(0)));
+            _shared = std::make_shared<Data>(rows2, cols2, T(0));
         Eval::assign(*this, list);
         return *this;
     }
@@ -209,7 +212,7 @@ public:
     Derived& operator=(const Expr2& expr)
     {
         if (!this->valid() || this->rows() != expr.rows() || this->cols() != expr.cols())
-            _shared = DataPtr(new Data(expr.rows(), expr.cols(), T(0)));
+            _shared = std::make_shared<Data>(expr.rows(), expr.cols(), T(0));
         Eval::eval(*this, expr);
         return *this;
     }

@@ -39,18 +39,18 @@
 #include <memory>
 #include <new>
 
-#define OPERATOR(OP)                                                                                      \
-    Derived& operator OP## = (const Type& expr2)                                                          \
-    {                                                                                                     \
-        Eval::eval(*this, *this OP expr2);                                                                \
-        return *this;                                                                                     \
-    }                                                                                                     \
-    template <typename Expr2, typename = IsExpr<Expr2>>                                                   \
-    Derived& operator OP## = (const Expr2& expr2)                                                         \
-    {                                                                                                     \
-        TENSE_VASSERT(this->size(), ==, expr2.size(), "operator" << #OP, "size of vectors must be equal") \
-        Eval::eval(*this, *this OP expr2);                                                                \
-        return *this;                                                                                     \
+#define OPERATOR(OP)                                                                                     \
+    Derived& operator OP## = (const Type& expr2)                                                         \
+    {                                                                                                    \
+        Eval::eval(*this, *this OP expr2);                                                               \
+        return *this;                                                                                    \
+    }                                                                                                    \
+    template <typename Expr2, typename = IsExpr<Expr2>>                                                  \
+    Derived& operator OP## = (const Expr2& expr2)                                                        \
+    {                                                                                                    \
+        TENSE_VASSERT(this->size(), ==, expr2.size(), "operator" + #OP, "size of vectors must be equal") \
+        Eval::eval(*this, *this OP expr2);                                                               \
+        return *this;                                                                                    \
     }
 
 namespace Tense::VectorImpl
@@ -66,15 +66,18 @@ class Vector : public Base<T, Vector<T>>
 
         ~Data()
         {
-            if (data != nullptr && owner) delete[] data;
+            if (data != nullptr && owner) ::operator delete[](data, std::align_val_t(TENSE_ALIGNMENT));
         }
-        Data(Size size, const T& val) : size(size)
+        Data(Size size) : size(size)
         {
             TENSE_VASSERT(size, >, 0, "constructor", "Input size can't be zero")
             data = new (std::align_val_t(TENSE_ALIGNMENT)) T[size];
+        }
+        Data(Size size, const T& val) : Data(size)  //
+        {
             std::fill(data, data + size, val);
         }
-        Data(Size Size, T* data, Mode mode) : owner(mode != Mode::Hold), size(size), data(data)
+        Data(Size size, T* data, Mode mode) : owner(mode != Mode::Hold), size(size), data(data)
         {
             TENSE_VASSERT(size, >, 0, "constructor", "Input size can't be zero")
             if (mode != Mode::Copy) return;
@@ -96,16 +99,16 @@ public:
     Vector() = default;
     Vector(const Derived& other) = default;
     Vector& operator=(const Derived& other) = default;
-    Vector(Size size, const T& val = T(0)) : _shared(new Data(size, val)) {}
-    Vector(Size size, T* data, Mode mode = Mode::Copy) : _shared(new Data(size, data, mode)) {}
+    explicit Vector(Size size, const T& val = T(0)) : _shared(std::make_shared<Data>(size, val)) {}
+    Vector(Size size, T* data, Mode mode = Mode::Copy) : _shared(std::make_shared<Data>(size, data, mode)) {}
 
     Vector(const std::initializer_list<T>& list)
     {
-        _shared = DataPtr(new Data(list.size(), 1, T(0)));
+        _shared = std::make_shared<Data>(list.size());
         std::copy(list.begin(), list.end(), _shared->data);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    Vector(const Expr2& expr) : _shared(new Data(expr.size(), T(0)))
+    Vector(const Expr2& expr) : _shared(std::make_shared<Data>(expr.size()))
     {
         Eval::eval(*this, expr);
     }
@@ -161,13 +164,14 @@ public:
 
     Derived& operator=(const std::initializer_list<Type>& list)
     {
-        if (!this->valid() || this->size() != list.size()) _shared = new DataPtr(Data(list.size(), T(0)));
+        if (!this->valid() || this->size() != list.size()) _shared = std::make_shared<Data>(list.size());
         std::copy(list.begin(), list.end(), _shared->data);
+        return *this;
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
     Derived& operator=(const Expr2& expr)
     {
-        if (!this->valid() || this->size() != expr.size()) _shared = DataPtr(new Data(expr.size(), T(0)));
+        if (!this->valid() || this->size() != expr.size()) _shared = std::make_shared<Data>(expr.size());
         Eval::eval(*this, expr);
         return *this;
     }
@@ -192,7 +196,10 @@ public:
 template <typename Expr1>
 void print(std::ostream& os, const Expr1& expr)
 {
-    // TODO
+    const Size size = expr.size();
+    os << "Vector<" << Impl::TypeName<typename Expr1::Type>() << ", " << size << "> [";
+    for (Size i = 0; i < size; ++i) os << expr[i] << (i == size - 1 ? "" : ", ");
+    os << "]";
 }
 
 template <typename... Ts>

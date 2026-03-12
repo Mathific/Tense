@@ -91,7 +91,7 @@
 namespace Tense::TensorImpl
 {
 template <typename Type, typename Derived>
-class Base : Expr
+class Base : public Expr
 {
     const Derived& derived() const { return *static_cast<const Derived*>(this); }
 
@@ -597,7 +597,7 @@ public:
 
     REDUCE0(sum, 0, val1 + val2)
     REDUCE0(prod, 1, val1* val2)
-    REDUCE0(max, std::numeric_limits<Type>::min(), std::max(val1, val2))
+    REDUCE0(max, std::numeric_limits<Type>::lowest(), std::max(val1, val2))
     REDUCE0(min, std::numeric_limits<Type>::max(), std::min(val1, val2))
     _REDUCE1(count, Size, Type, 0, val1 + (val2 == val3))
 
@@ -636,6 +636,4 @@ public:
 #undef BINARY
 #undef REDUCE0
 #undef _REDUCE1
-#undef _OPERATOR0
-#undef _OPERATOR1
 #undef OPERATOR1

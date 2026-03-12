@@ -94,7 +94,7 @@
 namespace Tense::VectorImpl
 {
 template <typename Type, typename Derived>
-class Base : Expr
+class Base : public Expr
 {
     const Derived& derived() const { return *static_cast<const Derived*>(this); }
     Size size() const { return derived()->size(); }
@@ -154,9 +154,10 @@ public:
 
     auto index(Cut cut) const
     {
-        if (cut.step == 0) cut = {this->size()};
-        TENSE_TASSERT(cut.start, <=, this->size(), "index", "Input row start can't be out of range")
-        TENSE_TASSERT(cut.end, <=, this->size(), "index", "Input row end can't be out of range")
+        auto _size = SSize(this->size());
+        if (cut.step == 0) cut = Cut{_size};
+        TENSE_TASSERT(cut.start, <=, SSize(_size), "index", "Input row start can't be out of range")
+        TENSE_TASSERT(cut.end, <=, SSize(_size), "index", "Input row end can't be out of range")
         return RIndex<Derived>(derived(), cut);
     }
     auto index(const std::vector<Size>& indices) const { return VIndex<Derived>(derived(), indices); }
@@ -545,15 +546,7 @@ public:
     {
         return sort([](auto i, auto j) { return i < j; });
     }
-    template <typename Func>
-    auto sortidx(Func func) const
-    {
-        return Backend::sortidx(derived(), func);
-    }
-    auto sortidx() const
-    {
-        return sortidx([](auto i, auto j) { return i < j; });
-    }
+    // TODO sortidx
 
     auto shuffle() const
     {
@@ -561,7 +554,7 @@ public:
         Backend::shuffle(target);
         return target;
     }
-    auto shuffleidx() const { return Backend::shuffle(derived()); }
+    // TODO shuffleidx
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -696,7 +689,7 @@ public:
 
     REDUCE0(sum, 0, val1 + val2)
     REDUCE0(prod, 1, val1* val2)
-    REDUCE0(max, std::numeric_limits<Type>::min(), std::max(val1, val2))
+    REDUCE0(max, std::numeric_limits<Type>::lowest(), std::max(val1, val2))
     REDUCE0(min, std::numeric_limits<Type>::max(), std::min(val1, val2))
     _REDUCE1(count, Size, Type, 0, val1 + (val2 == val3))
 
@@ -730,13 +723,9 @@ public:
 #undef _BINARY
 #undef _REDUCE0
 #undef _REDUCE1
-#undef _SQUARE
-#undef SQUARE
 #undef UNARY0
 #undef UNARY1
 #undef BINARY
 #undef REDUCE0
 #undef REDUCE1
-#undef _OPERATOR0
-#undef _OPERATOR1
 #undef OPERATOR1

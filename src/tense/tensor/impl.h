@@ -36,18 +36,18 @@
 
 #include <memory>
 
-#define OPERATOR(OP)                                                                                    \
-    Derived& operator OP## = (Type expr2)                                                               \
-    {                                                                                                   \
-        Eval::eval(*this, *this OP expr2);                                                              \
-        return *this;                                                                                   \
-    }                                                                                                   \
-    template <typename Expr2, typename = IsExpr<Expr2>>                                                 \
-    Derived& operator OP## = (const Expr2& expr2)                                                       \
-    {                                                                                                   \
-        TENSE_TASSERT(shape(), ==, expr2.shape(), "operator" << #OP, "Shapes of tensors must be equal") \
-        Eval::eval(*this, *this OP expr2);                                                              \
-        return *this;                                                                                   \
+#define OPERATOR(OP)                                                                                   \
+    Derived& operator OP## = (Type expr2)                                                              \
+    {                                                                                                  \
+        Eval::eval(*this, *this OP expr2);                                                             \
+        return *this;                                                                                  \
+    }                                                                                                  \
+    template <typename Expr2, typename = IsExpr<Expr2>>                                                \
+    Derived& operator OP## = (const Expr2& expr2)                                                      \
+    {                                                                                                  \
+        TENSE_TASSERT(shape(), ==, expr2.shape(), "operator" + #OP, "Shapes of tensors must be equal") \
+        Eval::eval(*this, *this OP expr2);                                                             \
+        return *this;                                                                                  \
     }
 
 namespace Tense::TensorImpl
@@ -63,7 +63,7 @@ class Tensor : public Base<T, Tensor<T>>
 
         ~Data()
         {
-            if (data != nullptr && owner) delete[] data;
+            if (data != nullptr && owner) ::operator delete[](data, std::align_val_t(TENSE_ALIGNMENT));
         }
         Data(const Shape& shape, const T& val) : Data(shape)
         {
@@ -106,12 +106,12 @@ public:
     Tensor() = default;
     Tensor(const Derived& other) = default;
     Derived& operator=(const Derived& other) = default;
-    Tensor(const Shape& shape, const T& val = T(0)) : _shared(new Data(shape, val)) {}
-    Tensor(const Shape& shape, const std::initializer_list<T>& list) : _shared(new Data(shape, list)) {}
-    Tensor(const Shape& shape, T* data, Mode mode = Mode::Copy) : _shared(new Data(shape, data, mode)) {}
+    Tensor(const Shape& shape, const T& val = T(0)) : _shared(std::make_shared<Data>(shape, val)) {}
+    Tensor(const Shape& shape, const std::initializer_list<T>& list) : _shared(std::make_shared<Data>(shape, list)) {}
+    Tensor(const Shape& shape, T* data, Mode mode = Mode::Copy) : _shared(std::make_shared<Data>(shape, data, mode)) {}
 
     template <typename Expr2, typename = IsExpr<Expr2>>
-    Tensor(const Expr2& expr) : _shared(new Data(expr.shape(), T(0)))
+    Tensor(const Expr2& expr) : _shared(std::make_shared<Data>(expr.shape(), T(0)))
     {
         Eval::eval(*this, expr);
     }
@@ -174,7 +174,7 @@ public:
     Derived& operator=(const Expr2& expr)
     {
         if (!valid() || Helper::elems(shape()) != Helper::elems(expr.shape()))
-            _shared = DataPtr(new Data(expr.shape(), T(0)));
+            _shared = std::make_shared<Data>(expr.shape(), T(0));
         else
             _shared->shape = expr.shape();
 

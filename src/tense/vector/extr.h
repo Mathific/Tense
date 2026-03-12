@@ -48,18 +48,6 @@ void sort(Expr1& expr1, Func func)
     auto data = &expr1[0];
     std::sort(data, data + size, func);
 }
-template <typename Expr1, typename Func>
-auto sortidx(Expr1& expr1, Func func)
-{
-    Size size = expr1.rows();
-    Vector<Size> index(size);
-
-    auto comp = [&](auto j, auto k) { return func(expr1[j], expr1[k]); };
-    auto data = index.data();
-    std::iota(data, data + size, 0);
-    std::sort(data, data + size, comp);
-    return index;
-}
 template <typename Expr1>
 void shuffle(Expr1& expr1)
 {
@@ -69,22 +57,6 @@ void shuffle(Expr1& expr1)
     auto size = expr1.size();
     auto data = &expr1[0];
     std::shuffle(data, data + size, generator);
-}
-template <typename Expr1>
-auto shuffleidx(Expr1& expr1)
-{
-    using Major = typename Expr1::Major;
-    Size size = expr1.size();
-    Matrix<Major, Size> index(size);
-
-    std::random_device random;
-    std::mt19937 generator(random());
-
-    auto data = index.data();
-    std::iota(data, data + size, 0);
-    std::shuffle(data, data + size, generator);
-
-    return index;
 }
 }  // namespace Backend
 }  // namespace Tense::VectorImpl

@@ -37,8 +37,19 @@
 #include <tense/struct.h>
 #include <tense/tensor/impl.h>
 #include <tense/util.h>
+#include <tense/vector/impl.h>
 
+#undef TENSE_VASSERT
 #undef TENSE_MASSERT
 #undef TENSE_TASSERT
 #undef TENSE_ALIGNMENT
 #undef TENSE_PARALLEL_FOR
+
+// TODO % operator to fmod in floats?
+// TODO conditio openmp pragmas on size
+// TODO fwhere and constant readable or writable?
+// TODO detect overlapping read/writes and eval first
+// TODO add block reduce to vector
+// TODO sort based on expr not ptr
+// TODO replace var/cov with two-pass algorithm
+// TODO shape should be small vector

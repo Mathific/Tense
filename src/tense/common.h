@@ -40,32 +40,29 @@
 
 #define TENSE_ALIGNMENT 64
 
-#define TENSE_VASSERT(first, op, second, name, msg)                                                                \
-    if (!static_cast<bool>(first op second))                                                                       \
-    {                                                                                                              \
-        std::stringstream stream;                                                                                  \
-        stream << "Error: " << (first) << " " << #op << " " << (second) << " -> " << msg << " in vector::" << name \
-               << ".";                                                                                             \
-        throw std::runtime_error(stream.str());                                                                    \
-    }
+#define TENSE_VASSERT(first, op, second, name, msg)                                                                   \
+    do                                                                                                                \
+    {                                                                                                                 \
+        if (!static_cast<bool>((first)op(second)))                                                                    \
+            ::Tense::Impl::AssertHelper((first), (second), #first, #op, #second, std::string("vector::") + name, msg, \
+                                        __FILE__, __LINE__);                                                          \
+    } while (false);
 
-#define TENSE_MASSERT(first, op, second, name, msg)                                                                \
-    if (!static_cast<bool>(first op second))                                                                       \
-    {                                                                                                              \
-        std::stringstream stream;                                                                                  \
-        stream << "Error: " << (first) << " " << #op << " " << (second) << " -> " << msg << " in matrix::" << name \
-               << ".";                                                                                             \
-        throw std::runtime_error(stream.str());                                                                    \
-    }
+#define TENSE_MASSERT(first, op, second, name, msg)                                                                   \
+    do                                                                                                                \
+    {                                                                                                                 \
+        if (!static_cast<bool>((first)op(second)))                                                                    \
+            ::Tense::Impl::AssertHelper((first), (second), #first, #op, #second, std::string("matrix::") + name, msg, \
+                                        __FILE__, __LINE__);                                                          \
+    } while (false);
 
-#define TENSE_TASSERT(first, op, second, name, msg)                                                                \
-    if (!static_cast<bool>(first op second))                                                                       \
-    {                                                                                                              \
-        std::stringstream stream;                                                                                  \
-        stream << "Error: " << (first) << " " << #op << " " << (second) << " -> " << msg << " in tensor::" << name \
-               << ".";                                                                                             \
-        throw std::runtime_error(stream.str());                                                                    \
-    }
+#define TENSE_TASSERT(first, op, second, name, msg)                                                                   \
+    do                                                                                                                \
+    {                                                                                                                 \
+        if (!static_cast<bool>((first)op(second)))                                                                    \
+            ::Tense::Impl::AssertHelper((first), (second), #first, #op, #second, std::string("tensor::") + name, msg, \
+                                        __FILE__, __LINE__);                                                          \
+    } while (false);
 
 #ifdef TENSE_USE_OPENMP
 #define TENSE_PARALLEL_FOR _Pragma("omp parallel for")
@@ -76,6 +73,7 @@
 namespace Tense
 {
 using Size = std::size_t;
+using SSize = std::ptrdiff_t;
 
 constexpr Size Inf = std::numeric_limits<Size>::max();
 
@@ -103,11 +101,11 @@ struct Writable
 
 struct Cut
 {
-    Size start, step, end;
+    SSize start, step, end;
     inline Cut() : start(0), step(0), end(0) {}
-    inline Cut(Size end) : start(0), step(1), end(end) {}
-    inline Cut(Size start, Size end) : start(start), end(end) { step = end >= start ? 1 : -1; }
-    inline Cut(Size start, Size step, Size end) : start(start), step(step), end(end) {}
+    inline Cut(SSize end) : start(0), step(1), end(end) {}
+    inline Cut(SSize start, SSize end) : start(start), end(end) { step = end >= start ? 1 : -1; }
+    inline Cut(SSize start, SSize step, SSize end) : start(start), step(step), end(end) {}
 };
 
 namespace VectorImpl
@@ -167,4 +165,21 @@ inline std::ostream& operator<<(std::ostream& os, const Shape& shape)
     for (Size i = 0; i < shape.size(); ++i) os << shape[i] << (i + 1 == shape.size() ? "" : ",");
     return os << ">";
 }
+
+namespace Impl
+{
+template <typename T1, typename T2>
+void AssertHelper(const T1& first, const T2& second, const char* firstName, const char* operation,
+                  const char* secondName, const std::string& scope, const char* message, const char* file, int line)
+{
+    std::stringstream stream;
+    stream << "Error at " << file << ":" << line << "\n"
+           << "Scope: " << scope << "\n"
+           << "Message: " << message << "\n"
+           << "Assertion failed: (" << firstName << " " << operation << " " << secondName << ")\n"
+           << "Evaluated as: (" << first << " " << operation << " " << second << ")";
+
+    throw std::runtime_error(stream.str());
+}
+}  // namespace Impl
 }  // namespace Tense

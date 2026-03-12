@@ -63,7 +63,7 @@
     template <typename _Expr, typename = IsExpr<_Expr>, typename Temp = Status, typename = IsWritable<Temp>> \
     auto& operator OP## = (const _Expr& expr)                                                                \
     {                                                                                                        \
-        TENSE_TASSERT(shape(), ==, expr.shape(), "operator" << #OP, "Shapes of tensors must be equal")       \
+        TENSE_TASSERT(shape(), ==, expr.shape(), "operator" + #OP, "Shapes of tensors must be equal")        \
         Eval::eval(*this, *this OP expr);                                                                    \
         return *this;                                                                                        \
     }
