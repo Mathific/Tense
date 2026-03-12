@@ -39,13 +39,13 @@
 
 #define FUNC(NAME)                                     \
     template <typename Expr, typename... Args>         \
-    auto NAME(const Expr &expr, Args &&...args)        \
+    auto NAME(const Expr& expr, Args&&... args)        \
     {                                                  \
         return expr.NAME(std::forward<Args>(args)...); \
     }
 #define TEMP(NAME, TYPE)                                           \
     template <TYPE T, typename Expr, typename... Args>             \
-    auto NAME(const Expr &expr, Args &&...args)                    \
+    auto NAME(const Expr& expr, Args&&... args)                    \
     {                                                              \
         return expr.template NAME<T>(std::forward<Args>(args)...); \
     }

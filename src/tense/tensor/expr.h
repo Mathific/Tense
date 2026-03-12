@@ -55,13 +55,13 @@
         using This = NAME<ARGS>;
 
 #define OPERATOR(OP)                                                                                         \
-    auto &operator OP##=(Type expr2)                                                                         \
+    auto& operator OP## = (Type expr2)                                                                       \
     {                                                                                                        \
         Eval::eval(*this, *this OP expr2);                                                                   \
         return *this;                                                                                        \
     }                                                                                                        \
     template <typename _Expr, typename = IsExpr<_Expr>, typename Temp = Status, typename = IsWritable<Temp>> \
-    auto &operator OP##=(const _Expr &expr)                                                                  \
+    auto& operator OP## = (const _Expr& expr)                                                                \
     {                                                                                                        \
         TENSE_TASSERT(shape(), ==, expr.shape(), "operator" << #OP, "Shapes of tensors must be equal")       \
         Eval::eval(*this, *this OP expr);                                                                    \
@@ -70,25 +70,25 @@
 
 #define WRITABLE(EXPR)                                                                                       \
     template <typename Temp = Status, typename = IsWritable<Temp>>                                           \
-    Type &operator[](Size idx)                                                                               \
+    Type& operator[](Size idx)                                                                               \
     {                                                                                                        \
         EXPR;                                                                                                \
     }                                                                                                        \
     Type operator[](Size idx) const { EXPR; }                                                                \
                                                                                                              \
-    auto &operator=(Type val)                                                                                \
+    auto& operator=(Type val)                                                                                \
     {                                                                                                        \
         Eval::assign(*this, val);                                                                            \
         return *this;                                                                                        \
     }                                                                                                        \
     template <typename _Expr, typename = IsExpr<_Expr>, typename Temp = Status, typename = IsWritable<Temp>> \
-    auto &operator=(const _Expr &expr)                                                                       \
+    auto& operator=(const _Expr& expr)                                                                       \
     {                                                                                                        \
         TENSE_TASSERT(shape(), ==, expr.shape(), "assign", "Shapes of tensors must be equal")                \
         Eval::eval(*this, expr);                                                                             \
         return *this;                                                                                        \
     }                                                                                                        \
-    auto &operator=(const This &other) { return this->operator=<This>(other); }                              \
+    auto& operator=(const This& other) { return this->operator= <This>(other); }                             \
                                                                                                              \
     OPERATOR(+)                                                                                              \
     OPERATOR(-)                                                                                              \

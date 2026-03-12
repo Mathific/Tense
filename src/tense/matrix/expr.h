@@ -73,20 +73,20 @@
 
 #define SQUARE(NAME, FLAG, EXPR)                                     \
     template <typename Expr1>                                        \
-    auto NAME(const Expr1 &expr1)                                    \
+    auto NAME(const Expr1& expr1)                                    \
     {                                                                \
-        auto func = [](auto i, auto j, const auto &expr1) { EXPR; }; \
+        auto func = [](auto i, auto j, const auto& expr1) { EXPR; }; \
         return Square<Expr1, decltype(func), FLAG>(expr1, func);     \
     }
 
 #define OPERATOR(OP)                                                                                         \
-    auto &operator OP##=(Type expr2)                                                                         \
+    auto& operator OP## = (Type expr2)                                                                       \
     {                                                                                                        \
         Eval::eval(*this, *this OP expr2);                                                                   \
         return *this;                                                                                        \
     }                                                                                                        \
     template <typename _Expr, typename = IsExpr<_Expr>, typename Temp = Status, typename = IsWritable<Temp>> \
-    auto &operator OP##=(const _Expr &expr)                                                                  \
+    auto& operator OP## = (const _Expr& expr)                                                                \
     {                                                                                                        \
         TENSE_MASSERT(rows(), ==, expr.rows(), "operator" << #OP, "Rows of matrices must be equal")          \
         TENSE_MASSERT(cols(), ==, expr.cols(), "operator" << #OP, "Cols of matrices must be equal")          \
@@ -96,33 +96,33 @@
 
 #define WRITABLE(EXPR)                                                                                           \
     template <typename Temp = Status, typename = IsWritable<Temp>>                                               \
-    Type &operator()(Size i, Size j)                                                                             \
+    Type& operator()(Size i, Size j)                                                                             \
     {                                                                                                            \
         EXPR;                                                                                                    \
     }                                                                                                            \
     Type operator()(Size i, Size j) const { EXPR; }                                                              \
                                                                                                                  \
-    auto &operator=(Type val)                                                                                    \
+    auto& operator=(Type val)                                                                                    \
     {                                                                                                            \
         Eval::assign(*this, val);                                                                                \
         return *this;                                                                                            \
     }                                                                                                            \
     template <typename _Expr, typename = IsExpr<_Expr>, typename Temp = Status, typename = IsWritable<Temp>>     \
-    auto &operator=(const _Expr &expr)                                                                           \
+    auto& operator=(const _Expr& expr)                                                                           \
     {                                                                                                            \
         TENSE_MASSERT(rows(), ==, expr.rows(), "assign", "Rows of matrices must be equal")                       \
         TENSE_MASSERT(cols(), ==, expr.cols(), "assign", "Cols of matrices must be equal")                       \
         Eval::eval(*this, expr);                                                                                 \
         return *this;                                                                                            \
     }                                                                                                            \
-    auto &operator=(IL1D<Type> list)                                                                             \
+    auto& operator=(IL1D<Type> list)                                                                             \
     {                                                                                                            \
         TENSE_MASSERT(rows(), ==, list.size(), "operator=", "Rows of matrix and initializer list must be equal") \
         TENSE_MASSERT(cols(), ==, 1, "operator=", "Cols of matrix and initializer list must be equal")           \
         Eval::assign(*this, list);                                                                               \
         return *this;                                                                                            \
     }                                                                                                            \
-    auto &operator=(IL2D<Type> list)                                                                             \
+    auto& operator=(IL2D<Type> list)                                                                             \
     {                                                                                                            \
         auto rows2 = list.size(), cols2 = rows2 ? list.begin()->size() : 0;                                      \
         TENSE_MASSERT(rows(), ==, rows2, "operator=", "Rows of matrix and initializer list must be equal")       \
@@ -130,7 +130,7 @@
         Eval::assign(*this, list);                                                                               \
         return *this;                                                                                            \
     }                                                                                                            \
-    auto &operator=(const This &other) { return this->operator=<This>(other); }                                  \
+    auto& operator=(const This& other) { return this->operator= <This>(other); }                                 \
                                                                                                                  \
     OPERATOR(+)                                                                                                  \
     OPERATOR(*)                                                                                                  \

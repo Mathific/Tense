@@ -32,6 +32,7 @@
 
 #include <tense/tensor/expr.h>
 
+#include <algorithm>
 #include <limits>
 #include <random>
 
@@ -52,23 +53,21 @@
 
 #define _BINARY(NAME, TYPE, FUNC)                                                     \
     template <typename Expr2, typename = IsExpr<Expr2>>                               \
-    auto NAME(const Expr2 &expr2) const                                               \
+    auto NAME(const Expr2& expr2) const                                               \
     {                                                                                 \
         return binary<TYPE, Expr2>(expr2, [](auto val1, auto val2) { return FUNC; }); \
     }
 
-#define _REDUCE0(NAME, TYPE, INIT, FUNC)                           \
-    auto NAME(Size dim = 0) const                                  \
-    {                                                              \
-        return reduce<TYPE>(                                       \
-            INIT, [](auto val1, auto val2) { return FUNC; }, dim); \
+#define _REDUCE0(NAME, TYPE, INIT, FUNC)                                           \
+    auto NAME(Size dim = 0) const                                                  \
+    {                                                                              \
+        return reduce<TYPE>(INIT, [](auto val1, auto val2) { return FUNC; }, dim); \
     }
 
-#define _REDUCE1(NAME, TYPE, VTYPE, INIT, FUNC)                        \
-    auto NAME(VTYPE val3, Size dim = 0) const                          \
-    {                                                                  \
-        return reduce<TYPE>(                                           \
-            INIT, [val3](auto val1, auto val2) { return FUNC; }, dim); \
+#define _REDUCE1(NAME, TYPE, VTYPE, INIT, FUNC)                                        \
+    auto NAME(VTYPE val3, Size dim = 0) const                                          \
+    {                                                                                  \
+        return reduce<TYPE>(INIT, [val3](auto val1, auto val2) { return FUNC; }, dim); \
     }
 
 #define UNARY0(NAME, FUNC) _UNARY0(NAME, typename Derived::Type, FUNC)
@@ -82,19 +81,19 @@
 
 #define OPERATOR1(NAME, RNAME, OP)                                       \
     template <typename Expr2, typename = IsExpr<Expr2>>                  \
-    auto operator OP(const Expr2 &expr2) const                           \
+    auto operator OP(const Expr2& expr2) const                           \
     {                                                                    \
         return derived().NAME(expr2);                                    \
     }                                                                    \
     auto operator OP(Type expr2) const { return derived().NAME(expr2); } \
-    friend auto operator OP(Type expr2, const Derived &expr1) { return expr1.RNAME(expr2); }
+    friend auto operator OP(Type expr2, const Derived& expr1) { return expr1.RNAME(expr2); }
 
 namespace Tense::TensorImpl
 {
 template <typename Type, typename Derived>
 class Base : Expr
 {
-    const Derived &derived() const { return *static_cast<const Derived *>(this); }
+    const Derived& derived() const { return *static_cast<const Derived*>(this); }
 
 public:
     template <typename T, typename Func>
@@ -103,7 +102,7 @@ public:
         return Unary<T, Derived, Func>(derived(), func);
     }
     template <typename T, typename Expr2, typename Func, typename = IsExpr<Expr2>>
-    auto binary(const Expr2 &expr2, Func func) const
+    auto binary(const Expr2& expr2, Func func) const
     {
         auto shape1 = Helper::remove(derived().shape());
         auto shape2 = Helper::remove(expr2.shape());
@@ -118,7 +117,7 @@ public:
         auto shape = Helper::left(derived().shape(), dim);
         return Reduce<T, Derived, Func>(derived(), func, shape, size, init);
     }
-    auto view(const Shape &indexes) const
+    auto view(const Shape& indexes) const
     {
         auto shape = derived().shape();
         TENSE_TASSERT(indexes.size(), <=, shape.size(), "view", "Input dimension can't be higher than tensor dimension")
@@ -126,9 +125,9 @@ public:
         shape = Helper::right(shape, indexes.size());
         return View<Derived>(derived(), shape, index);
     }
-    auto strided(const Shape &indexes) const
+    auto strided(const Shape& indexes) const
     {
-        const auto &shape = derived().shape();
+        const auto& shape = derived().shape();
         auto dim = shape.size() - indexes.size();
         TENSE_TASSERT(indexes.size(), <=, shape.size(), "stride",
                       "Input dimension can't be higher than tensor dimension")
@@ -138,7 +137,7 @@ public:
     auto repeat(Shape shape) const
     {
         Helper::check(shape);
-        const Shape &shape2 = derived().shape();
+        const Shape& shape2 = derived().shape();
         shape.insert(shape.end(), shape2.begin(), shape2.end());
         return Repeat<Derived>(derived(), shape, Helper::elems(derived().shape()));
     }
@@ -154,7 +153,7 @@ public:
         return Flip<Derived>(derived(), size);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto indirect(const Expr2 &expr2) const
+    auto indirect(const Expr2& expr2) const
     {
         TENSE_TASSERT(derived().shape(), ==, expr2.shape(), "indirect", "Shapes of tensors must be equal")
         return Indirect<Derived, Expr2>(derived(), expr2);
@@ -184,13 +183,13 @@ public:
         return IWhere<Derived, Func>(derived(), func, val);
     }
     template <typename Func, typename Expr2, typename = IsExpr<Expr2>>
-    auto where(Func func, const Expr2 &expr2) const
+    auto where(Func func, const Expr2& expr2) const
     {
         TENSE_TASSERT(derived().shape(), ==, expr2.shape(), "where", "Shape of tensors must be equal")
         return FEWhere<Derived, Expr2, Func>(derived(), expr2, func);
     }
     template <typename Func, typename Expr2, typename = IsExpr<Expr2>>
-    auto iwhere(Func func, const Expr2 &expr2) const
+    auto iwhere(Func func, const Expr2& expr2) const
     {
         TENSE_TASSERT(derived().shape(), ==, expr2.shape(), "iwhere", "Shape of tensors must be equal")
         return IEWhere<Derived, Expr2, Func>(derived(), expr2, func);
@@ -229,12 +228,12 @@ public:
     template <typename Major>
     auto matrix() const
     {
-        const auto &shape = derived().shape();
+        const auto& shape = derived().shape();
         TENSE_TASSERT(shape.size(), ==, 2, "matrix", "Dimension of tensor must be 2")
         return MatrixImpl::ToMatrix<Major, Derived>(derived(), shape[0], shape[1]);
     }
     template <typename... Args>
-    Type operator()(Args &&...args) const
+    Type operator()(Args&&... args) const
     {
         Shape indexes({std::forward<Args>(args)...});
         TENSE_TASSERT(derived().shape().size(), ==, indexes.size(), "operator()",
@@ -260,7 +259,7 @@ public:
             return derived().abs().template pow<P>().sum().pow(1.f / P);
     }
     template <Size P, typename Expr2, typename = IsExpr<Expr2>>
-    auto distance(const Expr2 &expr2) const
+    auto distance(const Expr2& expr2) const
     {
         return derived().sub(expr2).template norm<P>();
     }
@@ -278,7 +277,7 @@ public:
         return (expr1 - expr2) / (size - dof);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto cov(const Expr2 &expr2, Size dof = 0, Size dim = 0) const
+    auto cov(const Expr2& expr2, Size dof = 0, Size dim = 0) const
     {
         TENSE_TASSERT(derived().shape(), ==, expr2.shape(), "cov", "Shapes of tensors must be the same")
 
@@ -311,7 +310,7 @@ public:
     auto equal(Type expr2, Size dim = 0) const { return derived().eq(expr2).all(dim); }
 
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto equal(const Expr2 &expr2, Size dim = 0) const
+    auto equal(const Expr2& expr2, Size dim = 0) const
     {
         return derived().eq(expr2).all(dim);
     }
@@ -320,7 +319,7 @@ public:
         return derived().sub(expr2).abs().le(expr3).all();
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto close(const Expr2 &expr2, typename FromComplex<Type>::Type expr3 = 1e-5) const
+    auto close(const Expr2& expr2, typename FromComplex<Type>::Type expr3 = 1e-5) const
     {
         return derived().sub(expr2).abs().le(expr3).all();
     }
@@ -331,43 +330,43 @@ public:
     auto clip(Type val2, Type val3) const
     {
         if (val2 > val3) std::swap(val2, val3);
-        return unary<Type>([val2, val3](auto val1) { return std::min(std::max(val1, val2), val3); });
+        return unary<Type>([val2, val3](auto val1) { return std::clamp(val1, val2, val3); });
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    static auto init(const Shape &shape, const std::vector<Type> &list)
+    static auto init(const Shape& shape, const std::vector<Type>& list)
     {
         Helper::check(shape);
         TENSE_TASSERT(Helper::elems(shape), ==, list.size(), "init", "List size must be equal to input size");
         return Initial<Type>(shape, list);
     }
-    static auto init(const Shape &shape, const std::initializer_list<Type> &list)
+    static auto init(const Shape& shape, const std::initializer_list<Type>& list)
     {
         return init(shape, std::vector<Type>(list));
     }
-    static auto init(const Shape &shape, Type val)
+    static auto init(const Shape& shape, Type val)
     {
         Helper::check(shape);
         return Constant<Type>(shape, val);
     }
     template <typename Dist>
-    static auto dist(const Shape &shape, Dist dist)
+    static auto dist(const Shape& shape, Dist dist)
     {
         Helper::check(shape);
         return Distribution<Type, Dist>(shape, dist);
     }
-    static auto seq(const Shape &shape, Type start, Type end)
+    static auto seq(const Shape& shape, Type start, Type end)
     {
         Helper::check(shape);
         auto step = (end - start) / Helper::elems(shape);
         return Sequence<Type>(shape, start, step);
     }
-    static auto cat(const std::vector<Tensor<Type>> &list, Size dim = 0)
+    static auto cat(const std::vector<Tensor<Type>>& list, Size dim = 0)
     {
         auto shape = list[0].shape();
         TENSE_TASSERT(list.empty(), ==, false, "cat", "Input list can't be empty")
-        for (const auto &tensor : list)
+        for (const auto& tensor : list)
             TENSE_TASSERT(tensor.shape(), ==, shape, "cat", "Tensors must have the same shape")
         TENSE_TASSERT(shape.size(), >=, dim, "cat", "Input dimension can't be higher than dimension of input tensors")
 
@@ -381,21 +380,21 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////
 
-    static auto numin(const Shape &shape) { return init(shape, std::numeric_limits<Type>::min()); }
-    static auto numax(const Shape &shape) { return init(shape, std::numeric_limits<Type>::max()); }
-    static auto lowest(const Shape &shape) { return init(shape, std::numeric_limits<Type>::lowest()); }
-    static auto epsilon(const Shape &shape) { return init(shape, std::numeric_limits<Type>::epsilon()); }
-    static auto inf(const Shape &shape) { return init(shape, std::numeric_limits<Type>::infinity()); }
-    static auto nan(const Shape &shape) { return init(shape, std::numeric_limits<Type>::quiet_NaN()); }
-    static auto zeros(const Shape &shape) { return init(shape, 0); }
-    static auto ones(const Shape &shape) { return init(shape, 1); }
-    static auto e(const Shape &shape) { return init(shape, M_E); }
-    static auto pi(const Shape &shape) { return init(shape, M_PI); }
-    static auto sqrt2(const Shape &shape) { return init(shape, M_SQRT2); }
+    static auto numin(const Shape& shape) { return init(shape, std::numeric_limits<Type>::min()); }
+    static auto numax(const Shape& shape) { return init(shape, std::numeric_limits<Type>::max()); }
+    static auto lowest(const Shape& shape) { return init(shape, std::numeric_limits<Type>::lowest()); }
+    static auto epsilon(const Shape& shape) { return init(shape, std::numeric_limits<Type>::epsilon()); }
+    static auto inf(const Shape& shape) { return init(shape, std::numeric_limits<Type>::infinity()); }
+    static auto nan(const Shape& shape) { return init(shape, std::numeric_limits<Type>::quiet_NaN()); }
+    static auto zeros(const Shape& shape) { return init(shape, 0); }
+    static auto ones(const Shape& shape) { return init(shape, 1); }
+    static auto e(const Shape& shape) { return init(shape, M_E); }
+    static auto pi(const Shape& shape) { return init(shape, M_PI); }
+    static auto sqrt2(const Shape& shape) { return init(shape, M_SQRT2); }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    static auto uniform(const Shape &shape, Type a = 0, Type b = 1)
+    static auto uniform(const Shape& shape, Type a = 0, Type b = 1)
     {
         if constexpr (std::is_integral<Type>::value)
             return dist(shape, std::uniform_int_distribution<Type>(a, b));
@@ -403,63 +402,63 @@ public:
             return dist(shape, std::uniform_real_distribution<Type>(a, b));
         throw std::runtime_error("Data type not supported for uniform operation in tensor::uniform.");
     }
-    static auto bernoulli(const Shape &shape, double p = 0.5)  //
+    static auto bernoulli(const Shape& shape, double p = 0.5)  //
     {
         return dist(shape, std::bernoulli_distribution(p));
     }
-    static auto binomial(const Shape &shape, int t, double p = 0.5)  //
+    static auto binomial(const Shape& shape, int t, double p = 0.5)  //
     {
         return dist(shape, std::binomial_distribution(t, p));
     }
-    static auto geometric(const Shape &shape, double p = 0.5)  //
+    static auto geometric(const Shape& shape, double p = 0.5)  //
     {
         return dist(shape, std::geometric_distribution(p));
     }
-    static auto _pascal(const Shape &shape, int k, double p = 0.5)  //
+    static auto _pascal(const Shape& shape, int k, double p = 0.5)  //
     {
         return dist(shape, std::negative_binomial_distribution(k, p));
     }
-    static auto poisson(const Shape &shape, double mean = 1)  //
+    static auto poisson(const Shape& shape, double mean = 1)  //
     {
         return dist(shape, std::poisson_distribution(mean));
     }
-    static auto exponential(const Shape &shape, double lambda = 1)  //
+    static auto exponential(const Shape& shape, double lambda = 1)  //
     {
         return dist(shape, std::exponential_distribution(lambda));
     }
-    static auto gamma(const Shape &shape, double alpha = 1, double beta = 1)  //
+    static auto gamma(const Shape& shape, double alpha = 1, double beta = 1)  //
     {
         return dist(shape, std::gamma_distribution(alpha, beta));
     }
-    static auto weibull(const Shape &shape, double a = 1, double b = 1)  //
+    static auto weibull(const Shape& shape, double a = 1, double b = 1)  //
     {
         return dist(shape, std::weibull_distribution(a, b));
     }
-    static auto extremevalue(const Shape &shape, double a = 0, double b = 1)  //
+    static auto extremevalue(const Shape& shape, double a = 0, double b = 1)  //
     {
         return dist(shape, std::extreme_value_distribution(a, b));
     }
-    static auto normal(const Shape &shape, double mean = 0, double std = 1)  //
+    static auto normal(const Shape& shape, double mean = 0, double std = 1)  //
     {
         return dist(shape, std::normal_distribution(mean, std));
     }
-    static auto lognormal(const Shape &shape, double m = 0, double s = 1)  //
+    static auto lognormal(const Shape& shape, double m = 0, double s = 1)  //
     {
         return dist(shape, std::lognormal_distribution(m, s));
     }
-    static auto chisquared(const Shape &shape, double n = 1)  //
+    static auto chisquared(const Shape& shape, double n = 1)  //
     {
         return dist(shape, std::chi_squared_distribution(n));
     }
-    static auto cauchy(const Shape &shape, double a = 0, double b = 1)  //
+    static auto cauchy(const Shape& shape, double a = 0, double b = 1)  //
     {
         return dist(shape, std::cauchy_distribution(a, b));
     }
-    static auto fisherf(const Shape &shape, double m = 1, double n = 1)  //
+    static auto fisherf(const Shape& shape, double m = 1, double n = 1)  //
     {
         return dist(shape, std::fisher_f_distribution(m, n));
     }
-    static auto studentt(const Shape &shape, double n = 1)  //
+    static auto studentt(const Shape& shape, double n = 1)  //
     {
         return dist(shape, std::student_t_distribution(n));
     }
@@ -506,15 +505,15 @@ public:
     UNARY0(neg, -val1)
     UNARY0(pos, +val1)
     UNARY0(_not, !val1)
-    UNARY0(square, val1 *val1)
-    UNARY0(cube, val1 *val1 *val1)
+    UNARY0(square, val1* val1)
+    UNARY0(cube, val1 * val1 * val1)
     UNARY0(frac, val1 - std::floor(val1))
     UNARY0(ln, std::log(val1))
     UNARY0(rev, 1 / val1)
     UNARY0(rsqrt, 1 / std::sqrt(val1))
     UNARY0(relu, std::fmax(0, val1))
     UNARY0(sigmoid, 1 / (1 + std::exp(-val1)))
-    UNARY0(deg2rad, val1 *M_PI / 180)
+    UNARY0(deg2rad, val1* M_PI / 180)
     UNARY0(rad2deg, val1 * 180 / M_PI)
 
     ////////////////////////////////////////////////////////////////////////////
@@ -534,10 +533,10 @@ public:
     UNARY1(fmax, Type, std::fmin(val1, val2))
     UNARY1(add, Type, val1 + val2)
     UNARY1(sub, Type, val1 - val2)
-    UNARY1(mul, Type, val1 *val2)
+    UNARY1(mul, Type, val1* val2)
     UNARY1(div, Type, val1 / val2)
     UNARY1(mod, Type, val1 % val2)
-    UNARY1(_and, Type, val1 &val2)
+    UNARY1(_and, Type, val1& val2)
     UNARY1(_or, Type, val1 | val2)
     UNARY1(_xor, Type, val1 ^ val2)
     UNARY1(lshift, Size, val1 << val2)
@@ -580,10 +579,10 @@ public:
 
     BINARY(add, val1 + val2)
     BINARY(sub, val1 - val2)
-    BINARY(mul, val1 *val2)
+    BINARY(mul, val1* val2)
     BINARY(div, val1 / val2)
     BINARY(mod, val1 % val2)
-    BINARY(_and, val1 &val2)
+    BINARY(_and, val1& val2)
     BINARY(_or, val1 | val2)
     BINARY(_xor, val1 ^ val2)
     BINARY(atan2, std::atan2(val1, val2))
@@ -597,7 +596,7 @@ public:
     ////////////////////////////////////////////////////////////////////////////
 
     REDUCE0(sum, 0, val1 + val2)
-    REDUCE0(prod, 1, val1 *val2)
+    REDUCE0(prod, 1, val1* val2)
     REDUCE0(max, std::numeric_limits<Type>::min(), std::max(val1, val2))
     REDUCE0(min, std::numeric_limits<Type>::max(), std::min(val1, val2))
     _REDUCE1(count, Size, Type, 0, val1 + (val2 == val3))

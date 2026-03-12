@@ -55,6 +55,8 @@ configure_file(
 file(GLOB HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tense/*.h"
     "${CMAKE_CURRENT_BINARY_DIR}/gen/tense/config.h")
+file(GLOB VECTOR_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tense/vector/*.h")
 file(GLOB MATRIX_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tense/matrix/*.h")
 file(GLOB TENSOR_HEADERS
@@ -75,6 +77,10 @@ if(TENSE_ENABLE_OPENMP)
     find_package(OpenMP REQUIRED)
     target_link_libraries(Tense INTERFACE OpenMP::OpenMP_CXX)
     target_compile_definitions(Tense INTERFACE TENSE_USE_OPENMP)
+
+    message("Tense OpenMP Enabled!")
+else()
+    message("Tense OpenMP Enabled!")
 endif()
 
 if(TENSE_ENABLE_BLAS)
@@ -82,10 +88,18 @@ if(TENSE_ENABLE_BLAS)
     add_subdirectory(blasw)
     target_link_libraries(Tense INTERFACE BLASW::BLASW)
     target_compile_definitions(Tense INTERFACE TENSE_USE_BLAS)
+
+    message("Tense BLAS Enabled!")
+else()
+    message("Tense BLAS Enabled!")
 endif()
 
 if(TENSE_NATIVE_FLAGS)
     target_compile_options(Tense INTERFACE "-march=native" "-ffast-math")
+
+    message("Tense Flags Enabled!")
+else()
+    message("Tense Flags Enabled!")
 endif()
 
 add_library(Tense::Tense ALIAS Tense)
@@ -94,6 +108,8 @@ add_library(Tense::Tense ALIAS Tense)
 if(TENSE_ENABLE_INSTALL)
     install(FILES ${HEADERS}
         DESTINATION include/tense)
+    install(FILES ${VECTOR_HEADERS}
+        DESTINATION include/tense/matrix)
     install(FILES ${MATRIX_HEADERS}
         DESTINATION include/tense/matrix)
     install(FILES ${TENSOR_HEADERS}
@@ -144,7 +160,7 @@ if(TENSE_ENABLE_TESTS)
 
     add_executable(tests
         "test/tests.cpp" "test/matrix.cpp" "test/tensor.cpp"
-        ${HEADERS} ${MATRIX_HEADERS} ${TENSOR_HEADERS})
+        ${HEADERS} ${VECTOR_HEADERS} ${MATRIX_HEADERS} ${TENSOR_HEADERS})
     target_link_libraries(tests PUBLIC
         Tense::Tense gtest gtest_main)
 

@@ -40,6 +40,15 @@
 
 #define TENSE_ALIGNMENT 64
 
+#define TENSE_VASSERT(first, op, second, name, msg)                                                                \
+    if (!static_cast<bool>(first op second))                                                                       \
+    {                                                                                                              \
+        std::stringstream stream;                                                                                  \
+        stream << "Error: " << (first) << " " << #op << " " << (second) << " -> " << msg << " in vector::" << name \
+               << ".";                                                                                             \
+        throw std::runtime_error(stream.str());                                                                    \
+    }
+
 #define TENSE_MASSERT(first, op, second, name, msg)                                                                \
     if (!static_cast<bool>(first op second))                                                                       \
     {                                                                                                              \
@@ -101,6 +110,20 @@ struct Cut
     inline Cut(Size start, Size step, Size end) : start(start), step(step), end(end) {}
 };
 
+namespace VectorImpl
+{
+struct Expr;
+
+template <typename Type>
+class Vector;
+
+template <typename M, typename Expr1>
+struct ToMatrix;
+
+template <typename T, typename S, typename Enable = void>
+struct Alias;
+}  // namespace VectorImpl
+
 namespace MatrixImpl
 {
 struct Expr;
@@ -129,13 +152,16 @@ template <typename T, typename S, typename Enable = void>
 struct Alias;
 }  // namespace TensorImpl
 
+template <typename Type>
+using Vector = VectorImpl::Vector<Type>;
+
 template <typename Major, typename Type>
 using Matrix = MatrixImpl::Matrix<Major, Type>;
 
 template <typename Type>
 using Tensor = TensorImpl::Tensor<Type>;
 
-inline std::ostream &operator<<(std::ostream &os, const Shape &shape)
+inline std::ostream& operator<<(std::ostream& os, const Shape& shape)
 {
     os << "Shape<";
     for (Size i = 0; i < shape.size(); ++i) os << shape[i] << (i + 1 == shape.size() ? "" : ",");

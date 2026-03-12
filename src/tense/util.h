@@ -38,12 +38,12 @@
 namespace Tense
 {
 template <typename T>
-void print(const T &value)
+void print(const T& value)
 {
     std::cout << value << " " << std::endl;
 }
 template <typename Head, typename... Tail>
-void print(const Head &head, Tail &&...tail)
+void print(const Head& head, Tail&&... tail)
 {
     std::cout << head << " ";
     print(std::forward<Tail>(tail)...);
@@ -64,7 +64,7 @@ struct Timer
         auto now = std::chrono::high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<MS>(now - time);
         time = now;
-        return elapsed.count() / 1000'000.f;
+        return elapsed.count() / 1'000'000.f;
     }
 };
 }  // namespace Tense

@@ -37,13 +37,13 @@
 #include <memory>
 
 #define OPERATOR(OP)                                                                                    \
-    Derived &operator OP##=(Type expr2)                                                                 \
+    Derived& operator OP## = (Type expr2)                                                               \
     {                                                                                                   \
         Eval::eval(*this, *this OP expr2);                                                              \
         return *this;                                                                                   \
     }                                                                                                   \
     template <typename Expr2, typename = IsExpr<Expr2>>                                                 \
-    Derived &operator OP##=(const Expr2 &expr2)                                                         \
+    Derived& operator OP## = (const Expr2& expr2)                                                       \
     {                                                                                                   \
         TENSE_TASSERT(shape(), ==, expr2.shape(), "operator" << #OP, "Shapes of tensors must be equal") \
         Eval::eval(*this, *this OP expr2);                                                              \
@@ -59,20 +59,20 @@ class Tensor : public Base<T, Tensor<T>>
     {
         bool owner = true;
         Shape shape, stride;
-        T *data = nullptr;
+        T* data = nullptr;
 
         ~Data()
         {
             if (data != nullptr && owner) delete[] data;
         }
-        Data(const Shape &shape, const T &val) : Data(shape)
+        Data(const Shape& shape, const T& val) : Data(shape)
         {
             Helper::check(shape);
             auto size = Helper::elems(shape);
             data = new (std::align_val_t(TENSE_ALIGNMENT)) T[size];
             std::fill(data, data + size, val);
         }
-        Data(const Shape &shape, const std::vector<T> &list) : Data(shape)
+        Data(const Shape& shape, const std::vector<T>& list) : Data(shape)
         {
             Helper::check(shape);
             auto size = Helper::elems(shape);
@@ -80,7 +80,7 @@ class Tensor : public Base<T, Tensor<T>>
             data = new (std::align_val_t(TENSE_ALIGNMENT)) T[size];
             std::copy(list.begin(), list.end(), data);
         }
-        Data(const Shape &shape, T *data, Mode mode) : Data(shape)
+        Data(const Shape& shape, T* data, Mode mode) : Data(shape)
         {
             this->owner = mode != Mode::Hold;
             this->data = data;
@@ -91,7 +91,7 @@ class Tensor : public Base<T, Tensor<T>>
             this->data = new (std::align_val_t(TENSE_ALIGNMENT)) T[size];
             std::copy(data, data + size, this->data);
         }
-        Data(const Shape &shape) : shape(shape), stride(Helper::stride(shape)) {}
+        Data(const Shape& shape) : shape(shape), stride(Helper::stride(shape)) {}
     };
 
     using Derived = Tensor<T>;
@@ -103,19 +103,19 @@ public:
     using Type = T;
     using Status = Writable;
 
-    Tensor() {}
-    Tensor(const Derived &other) = default;
-    Derived &operator=(const Derived &other) = default;
-    Tensor(const Shape &shape, const T &val = T(0)) : _shared(new Data(shape, val)) {}
-    Tensor(const Shape &shape, const std::initializer_list<T> &list) : _shared(new Data(shape, list)) {}
-    Tensor(const Shape &shape, T *data, Mode mode = Mode::Copy) : _shared(new Data(shape, data, mode)) {}
+    Tensor() = default;
+    Tensor(const Derived& other) = default;
+    Derived& operator=(const Derived& other) = default;
+    Tensor(const Shape& shape, const T& val = T(0)) : _shared(new Data(shape, val)) {}
+    Tensor(const Shape& shape, const std::initializer_list<T>& list) : _shared(new Data(shape, list)) {}
+    Tensor(const Shape& shape, T* data, Mode mode = Mode::Copy) : _shared(new Data(shape, data, mode)) {}
 
     template <typename Expr2, typename = IsExpr<Expr2>>
-    Tensor(const Expr2 &expr) : _shared(new Data(expr.shape(), T(0)))
+    Tensor(const Expr2& expr) : _shared(new Data(expr.shape(), T(0)))
     {
         Eval::eval(*this, expr);
     }
-    Derived &_reshape(const Shape &shape)
+    Derived& _reshape(const Shape& shape)
     {
         TENSE_TASSERT(Helper::elems(_shared->shape), ==, Helper::elems(shape), "_reshape",
                       "Size of shapes must be equal")
@@ -126,7 +126,7 @@ public:
         if (!valid()) return sizeof(DataPtr);
         return size() * sizeof(Type) + dims() * sizeof(Size) * 2 + sizeof(DataPtr) + sizeof(Data);
     }
-    Type *release()
+    Type* release()
     {
         _shared->owner = false;
         auto data = _shared->data;
@@ -141,37 +141,37 @@ public:
         return Matrix<Major, Type>(size(0), size(1), data, mode);
     }
     void reset() { _shared.reset(); }
-    const Derived &eval() const { return *this; }
-    Tensor<T> copy() const { return Tensor<T>(_shared->shape, const_cast<T *>(_shared->data), Mode::Copy); }
+    const Derived& eval() const { return *this; }
+    Tensor<T> copy() const { return Tensor<T>(_shared->shape, const_cast<T*>(_shared->data), Mode::Copy); }
 
     bool valid() const { return bool(_shared); }
     Size dims() const { return _shared->shape.size(); }
-    const Shape &shape() const { return _shared->shape; }
+    const Shape& shape() const { return _shared->shape; }
     Size size() const { return Helper::elems(_shared->shape); }
     Size size(Size index) const { return _shared->shape[index]; }
 
-    T *data() { return _shared->data; }
-    const T *data() const { return _shared->data; }
-    T *begin() { return _shared->data; }
-    const T *begin() const { return _shared->data; }
-    T *end() { return _shared->data + Helper::elems(_shared->shape); }
-    const T *end() const { return _shared->data + Helper::elems(_shared->shape); }
-    T &operator[](Size index) { return _shared->data[index]; }
-    const T &operator[](Size index) const { return _shared->data[index]; }
+    T* data() { return _shared->data; }
+    const T* data() const { return _shared->data; }
+    T* begin() { return _shared->data; }
+    const T* begin() const { return _shared->data; }
+    T* end() { return _shared->data + Helper::elems(_shared->shape); }
+    const T* end() const { return _shared->data + Helper::elems(_shared->shape); }
+    T& operator[](Size index) { return _shared->data[index]; }
+    const T& operator[](Size index) const { return _shared->data[index]; }
 
     template <typename... Args>
-    T &operator()(Args &&...args)
+    T& operator()(Args&&... args)
     {
         return _shared->data[Access::item<0, sizeof...(Args)>(_shared->stride, std::forward<Args>(args)...)];
     }
     template <typename... Args>
-    const T &operator()(Args &&...args) const
+    const T& operator()(Args&&... args) const
     {
         return _shared->data[Access::item<0, sizeof...(Args)>(_shared->stride, std::forward<Args>(args)...)];
     }
 
     template <typename Expr2, typename = IsExpr<Expr2>>
-    Derived &operator=(const Expr2 &expr)
+    Derived& operator=(const Expr2& expr)
     {
         if (!valid() || Helper::elems(shape()) != Helper::elems(expr.shape()))
             _shared = DataPtr(new Data(expr.shape(), T(0)));
@@ -181,7 +181,7 @@ public:
         Eval::eval(*this, expr);
         return *this;
     }
-    Derived &operator=(const Type &expr2)
+    Derived& operator=(const Type& expr2)
     {
         std::fill(_shared->data, _shared->data + size(), expr2);
         return *this;
@@ -200,9 +200,9 @@ public:
 };
 
 template <typename Expr1>
-void print(std::ostream &os, const Expr1 &expr)
+void print(std::ostream& os, const Expr1& expr)
 {
-    const auto &shape = expr.shape();
+    const auto& shape = expr.shape();
     os << "Tensor<" << TypeName<typename Expr1::Type>() << ",";
     for (Size i = 0; i < shape.size(); ++i) os << shape[i] << (i + 1 == shape.size() ? "" : ",");
     os << "> [" << std::endl << "    ";
@@ -212,7 +212,7 @@ void print(std::ostream &os, const Expr1 &expr)
 }
 
 template <typename T>
-std::ostream &operator<<(std::ostream &os, const Tensor<T> &tensor)
+std::ostream& operator<<(std::ostream& os, const Tensor<T>& tensor)
 {
     if (!tensor.valid()) return os << "Tensor<>[]";
     print(os, tensor);
@@ -220,7 +220,7 @@ std::ostream &operator<<(std::ostream &os, const Tensor<T> &tensor)
 }
 
 template <typename Expr, typename = IsExpr<Expr>>
-std::ostream &operator<<(std::ostream &os, const Expr &tensor)
+std::ostream& operator<<(std::ostream& os, const Expr& tensor)
 {
     print(os, tensor);
     return os;

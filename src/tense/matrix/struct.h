@@ -123,7 +123,7 @@ struct ReadableAlias
 template <typename T>
 struct ReadableAlias<T, typename std::enable_if<IsStatic<T>::value>::type>
 {
-    using Type = const T &;
+    using Type = const T&;
 };
 template <typename T, typename Enable = void>
 struct WritableAlias
@@ -133,7 +133,7 @@ struct WritableAlias
 template <typename T>
 struct WritableAlias<T, typename std::enable_if<IsStatic<T>::value>::type>
 {
-    using Type = T &;
+    using Type = T&;
 };
 
 template <typename T, typename S, typename Enable>
@@ -157,7 +157,7 @@ template <Size I, Size J, Size Rows, Size Cols>
 struct StaticEval
 {
     template <typename Expr1, typename Expr2>
-    static void ceval(Expr1 &expr1, const Expr2 &expr2)
+    static void ceval(Expr1& expr1, const Expr2& expr2)
     {
         expr1(I, J) = expr2(I, J);
         if constexpr (I + 1 < Rows)
@@ -166,7 +166,7 @@ struct StaticEval
             StaticEval<0, J + 1, Rows, Cols>::ceval(expr1, expr2);
     }
     template <typename Expr1, typename Expr2>
-    static void reval(Expr1 &expr1, const Expr2 &expr2)
+    static void reval(Expr1& expr1, const Expr2& expr2)
     {
         expr1(I, J) = expr2(I, J);
         if constexpr (J + 1 < Cols)
@@ -175,7 +175,7 @@ struct StaticEval
             StaticEval<I + 1, 0, Rows, Cols>::reval(expr1, expr2);
     }
     template <typename Expr1, typename Expr2>
-    static void eval(Expr1 &expr1, const Expr2 &expr2)
+    static void eval(Expr1& expr1, const Expr2& expr2)
     {
         if constexpr (std::is_same<typename Expr1::Major, Col>::value)
             ceval(expr1, expr2);
@@ -187,13 +187,13 @@ struct StaticEval
 struct Eval
 {
     template <typename Expr1>
-    static void assign(Expr1 &expr1, IL1D<typename Expr1::Type> list)
+    static void assign(Expr1& expr1, IL1D<typename Expr1::Type> list)
     {
         Size i = 0;
         for (auto item : list) expr1(i++, 0) = item;
     }
     template <typename Expr1>
-    static void assign(Expr1 &expr1, IL2D<typename Expr1::Type> list)
+    static void assign(Expr1& expr1, IL2D<typename Expr1::Type> list)
     {
         Size rows = expr1.rows(), cols = expr1.cols();
         TENSE_MASSERT(rows, ==, list.size(), "assign", "2D initializer list input has different length")
@@ -213,32 +213,40 @@ struct Eval
         }
     }
     template <typename Expr1>
-    static void assign(Expr1 &expr1, typename Expr1::Type expr2)
+    static void assign(Expr1& expr1, typename Expr1::Type expr2)
     {
         auto rows = expr1.rows(), cols = expr1.cols();
         if constexpr (std::is_same<typename Expr1::Major, Col>::value)
-TENSE_PARALLEL_FOR
+        {
+            TENSE_PARALLEL_FOR
             for (Size j = 0; j < cols; ++j)
                 for (Size i = 0; i < rows; ++i) expr1(i, j) = expr2;
+        }
         else
-TENSE_PARALLEL_FOR
+        {
+            TENSE_PARALLEL_FOR
             for (Size i = 0; i < rows; ++i)
                 for (Size j = 0; j < cols; ++j) expr1(i, j) = expr2;
+        }
     }
 
     template <typename Expr1, typename Expr2>
-    static void eval(Expr1 &expr1, const Expr2 &expr2)
+    static void eval(Expr1& expr1, const Expr2& expr2)
     {
         auto rows = expr1.rows(), cols = expr1.cols();
 
         if constexpr (std::is_same<typename Expr1::Major, Col>::value)
-TENSE_PARALLEL_FOR
+        {
+            TENSE_PARALLEL_FOR
             for (Size j = 0; j < cols; ++j)
                 for (Size i = 0; i < rows; ++i) expr1(i, j) = expr2(i, j);
+        }
         else
-TENSE_PARALLEL_FOR
+        {
+            TENSE_PARALLEL_FOR
             for (Size i = 0; i < rows; ++i)
                 for (Size j = 0; j < cols; ++j) expr1(i, j) = expr2(i, j);
+        }
     }
 };
 }  // namespace Tense::MatrixImpl

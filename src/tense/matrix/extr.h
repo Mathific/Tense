@@ -32,11 +32,11 @@
 
 #pragma once
 
+#include <tense/matrix/struct.h>
+
 #include <algorithm>
 #include <numeric>
 #include <random>
-
-#include <tense/matrix/struct.h>
 
 #ifdef TENSE_USE_BLAS
 #include <blasw/blasw.h>
@@ -55,12 +55,14 @@ void rsort(Expr1& expr1, Func func)
     if constexpr (std::is_same<Major, Col>::value)
         throw std::runtime_error("Not Implemented.");
     else
-TENSE_PARALLEL_FOR
+    {
+        TENSE_PARALLEL_FOR
         for (Size i = 0; i < rows; ++i)
         {
             auto data = &expr1(i, 0);
             std::sort(data, data + cols, func);
         }
+    }
 }
 
 template <typename Expr1, typename Func>
@@ -69,15 +71,13 @@ void csort(Expr1& expr1, Func func)
     using Major = typename Expr1::Major;
     Size rows = expr1.rows(), cols = expr1.cols();
 
-    if constexpr (std::is_same<Major, Col>::value)
-TENSE_PARALLEL_FOR
-        for (Size j = 0; j < cols; ++j)
-        {
-            auto data = &expr1(0, j);
-            std::sort(data, data + rows, func);
-        }
-    else
-        throw std::runtime_error("Not Implemented.");
+    if constexpr (std::is_same<Major, Col>::value) TENSE_PARALLEL_FOR
+    for (Size j = 0; j < cols; ++j)
+    {
+        auto data = &expr1(0, j);
+        std::sort(data, data + rows, func);
+    }
+    else throw std::runtime_error("Not Implemented.");
 }
 
 template <typename Expr1, typename Func>
@@ -98,7 +98,8 @@ auto rsortidx(Expr1& expr1, Func func)
     if constexpr (std::is_same<Major, Col>::value)
         throw std::runtime_error("Not Implemented.");
     else
-TENSE_PARALLEL_FOR
+    {
+        TENSE_PARALLEL_FOR
         for (Size i = 0; i < rows; ++i)
         {
             auto comp = [&](auto j, auto k) { return func(expr1(i, j), expr1(i, k)); };
@@ -106,6 +107,7 @@ TENSE_PARALLEL_FOR
             std::iota(data, data + cols, 0);
             std::sort(data, data + cols, comp);
         }
+    }
 
     return index;
 }
@@ -118,7 +120,8 @@ auto csortidx(Expr1& expr1, Func func)
     Matrix<Major, Size> index(rows, cols);
 
     if constexpr (std::is_same<Major, Col>::value)
-TENSE_PARALLEL_FOR
+    {
+        TENSE_PARALLEL_FOR
         for (Size j = 0; j < cols; ++j)
         {
             auto comp = [&](auto i, auto k) { return func(expr1(i, j), expr1(k, j)); };
@@ -126,6 +129,7 @@ TENSE_PARALLEL_FOR
             std::iota(data, data + rows, 0);
             std::sort(data, data + rows, comp);
         }
+    }
     else
         throw std::runtime_error("Not Implemented.");
 
@@ -144,12 +148,14 @@ void rshuffle(Expr1& expr1)
     if constexpr (std::is_same<Major, Col>::value)
         throw std::runtime_error("Not Implemented.");
     else
-TENSE_PARALLEL_FOR
+    {
+        TENSE_PARALLEL_FOR
         for (Size i = 0; i < rows; ++i)
         {
             auto data = &expr1(i, 0);
             std::shuffle(data, data + cols, generator);
         }
+    }
 }
 
 template <typename Expr1>
@@ -162,12 +168,14 @@ void cshuffle(Expr1& expr1)
     std::mt19937 generator(random());
 
     if constexpr (std::is_same<Major, Col>::value)
-TENSE_PARALLEL_FOR
+    {
+        TENSE_PARALLEL_FOR
         for (Size j = 0; j < cols; ++j)
         {
             auto data = &expr1(0, j);
             std::shuffle(data, data + rows, generator);
         }
+    }
     else
         throw std::runtime_error("Not Implemented.");
 }
@@ -196,13 +204,15 @@ auto rshuffleidx(Expr1& expr1)
     if constexpr (std::is_same<Major, Col>::value)
         throw std::runtime_error("Not Implemented.");
     else
-TENSE_PARALLEL_FOR
+    {
+        TENSE_PARALLEL_FOR
         for (Size i = 0; i < rows; ++i)
         {
             auto data = &index(i, 0);
             std::iota(data, data + cols, 0);
             std::shuffle(data, data + cols, generator);
         }
+    }
 
     return index;
 }
@@ -218,13 +228,15 @@ auto cshuffleidx(Expr1& expr1)
     std::mt19937 generator(random());
 
     if constexpr (std::is_same<Major, Col>::value)
-TENSE_PARALLEL_FOR
+    {
+        TENSE_PARALLEL_FOR
         for (Size j = 0; j < cols; ++j)
         {
             auto data = &index(0, j);
             std::iota(data, data + rows, 0);
             std::shuffle(data, data + rows, generator);
         }
+    }
     else
         throw std::runtime_error("Not Implemented.");
 
@@ -822,7 +834,7 @@ Expr1 svd(const Expr1& expr1, bool _left, bool _right)
 {
     throw std::runtime_error("Not Implemented.");
 }
-}
+}  // namespace External
 #endif
 
 }  // namespace Tense::MatrixImpl

@@ -35,7 +35,6 @@
 #include <tense/struct.h>
 
 #include <algorithm>
-#include <complex>
 #include <numeric>
 #include <type_traits>
 
@@ -97,21 +96,21 @@ struct Alias<T, Writable>
 
 namespace Helper
 {
-inline Size elems(const Shape &shape, Size margin1 = 0, Size margin2 = 0)
+inline Size elems(const Shape& shape, Size margin1 = 0, Size margin2 = 0)
 {
     return std::accumulate(shape.begin() + margin1, shape.end() - margin2, Size(1), std::multiplies<Size>());
 }
-inline Shape left(const Shape &shape, Size dim)
+inline Shape left(const Shape& shape, Size dim)
 {
     if (dim == 0) return {1};
     return Shape(shape.begin(), shape.begin() + dim);
 }
-inline Shape right(const Shape &shape, Size dim)
+inline Shape right(const Shape& shape, Size dim)
 {
     if (dim == shape.size()) return {1};
     return Shape(shape.begin() + dim, shape.end());
 }
-inline Shape stride(const Shape &shape)
+inline Shape stride(const Shape& shape)
 {
     Shape stride(shape.size(), 1);
     for (Size i = shape.size() - 1; i > 0; --i) stride[i - 1] = stride[i] * shape[i];
@@ -124,16 +123,16 @@ inline Shape remove(Shape shape)
         if (shape[i] != 1) break;
     return Shape(shape.begin() + i, shape.end());
 }
-inline void check(const Shape &shape)
+inline void check(const Shape& shape)
 {
-    for (const auto &item : shape) TENSE_TASSERT(item, >, 0, "check", "Shape item can't be zero")
+    for (const auto& item : shape) TENSE_TASSERT(item, >, 0, "check", "Shape item can't be zero")
 }
-inline Size check(const Shape &shape, Size dim)
+inline Size check(const Shape& shape, Size dim)
 {
     TENSE_TASSERT(dim, <, shape.size(), "check", "Dimension must be less than tensor dimension")
     return Helper::elems(shape, dim);
 }
-inline Size check(const Shape &shape1, const Shape &shape2)
+inline Size check(const Shape& shape1, const Shape& shape2)
 {
     Size diff = std::abs(int64_t(shape1.size()) - int64_t(shape2.size()));
     if (shape1.size() > shape2.size())
@@ -147,7 +146,7 @@ inline Size check(const Shape &shape1, const Shape &shape2)
         return std::accumulate(shape2.begin(), shape2.begin() + diff, Size(1), std::multiplies<Size>());
     }
 }
-inline void replace(Shape &shape, Size size)
+inline void replace(Shape& shape, Size size)
 {
     auto it = std::find(shape.begin(), shape.end(), 0);
     if (it != shape.end())
@@ -158,7 +157,7 @@ inline void replace(Shape &shape, Size size)
     TENSE_TASSERT(std::find(it, shape.end(), 0) == shape.end(), ==, true, "replace", "Shape item can't be zero")
     TENSE_TASSERT(Helper::elems(shape) == size, ==, true, "replace", "Sizes of shapes must be equal")
 }
-inline Size view(const Shape &shape, const Shape &indexes)
+inline Size view(const Shape& shape, const Shape& indexes)
 {
     Size index = 0, size = Helper::elems(shape, 1);
     for (Size i = 0; i < indexes.size(); ++i)
@@ -168,7 +167,7 @@ inline Size view(const Shape &shape, const Shape &indexes)
     }
     return index;
 }
-inline Size item(const Shape &shape, const Shape &indexes)
+inline Size item(const Shape& shape, const Shape& indexes)
 {
     Size index = 0, size = 1, diff = shape.size() - indexes.size();
     for (Size i = indexes.size(); i > 0; --i)
@@ -183,7 +182,7 @@ inline Size item(const Shape &shape, const Shape &indexes)
 namespace Access
 {
 template <Size I, Size N, typename Head, typename... Tail>
-Size item(const Shape &stride, Head head, Tail &&...tail)
+Size item(const Shape& stride, Head head, Tail&&... tail)
 {
     if constexpr (I == N - 1)
         return head;
@@ -197,16 +196,16 @@ Size item(const Shape &stride, Head head, Tail &&...tail)
 struct Eval
 {
     template <typename Expr1>
-    static void assign(Expr1 &expr1, typename Expr1::Type expr2)
+    static void assign(Expr1& expr1, typename Expr1::Type expr2)
     {
         auto size = Helper::elems(expr1.shape());
         for (Size i = 0; i < size; ++i) expr1[i] = expr2;
     }
     template <typename Expr1, typename Expr2>
-    static void eval(Expr1 &expr1, const Expr2 &expr2)
+    static void eval(Expr1& expr1, const Expr2& expr2)
     {
         auto size = Helper::elems(expr1.shape());
-TENSE_PARALLEL_FOR
+        TENSE_PARALLEL_FOR
         for (Size i = 0; i < size; ++i) expr1[i] = expr2[i];
     }
 };

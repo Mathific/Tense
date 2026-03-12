@@ -35,6 +35,7 @@
 #include <tense/matrix/expr.h>
 #include <tense/matrix/extr.h>
 
+#include <algorithm>
 #include <limits>
 #include <random>
 
@@ -55,7 +56,7 @@
 
 #define _BINARY(NAME, TYPE, FUNC)                                                     \
     template <typename Expr2, typename = IsExpr<Expr2>>                               \
-    auto NAME(const Expr2 &expr2) const                                               \
+    auto NAME(const Expr2& expr2) const                                               \
     {                                                                                 \
         return binary<TYPE, Expr2>(expr2, [](auto val1, auto val2) { return FUNC; }); \
     }
@@ -104,12 +105,12 @@
 
 #define OPERATOR1(NAME, RNAME, OP)                                       \
     template <typename Expr2, typename = IsExpr<Expr2>>                  \
-    auto operator OP(const Expr2 &expr2) const                           \
+    auto operator OP(const Expr2& expr2) const                           \
     {                                                                    \
         return derived().NAME(expr2);                                    \
     }                                                                    \
     auto operator OP(Type expr2) const { return derived().NAME(expr2); } \
-    friend auto operator OP(Type expr2, const Derived &expr1) { return expr1.RNAME(expr2); }
+    friend auto operator OP(Type expr2, const Derived& expr1) { return expr1.RNAME(expr2); }
 
 #define UNARY0(NAME, FUNC) _UNARY0(NAME, typename Derived::Type, FUNC)
 #define UNARY1(NAME, TYPE, FUNC) _UNARY1(NAME, typename Derived::Type, TYPE, FUNC)
@@ -122,9 +123,9 @@ namespace Tense::MatrixImpl
 template <typename Major, typename Type, typename Derived>
 class Base : Expr
 {
-    const Derived &derived() const { return *static_cast<const Derived *>(this); }
-    Size rows() const { return static_cast<const Derived *>(this)->rows(); }
-    Size cols() const { return static_cast<const Derived *>(this)->cols(); }
+    const Derived& derived() const { return *static_cast<const Derived*>(this); }
+    Size rows() const { return static_cast<const Derived*>(this)->rows(); }
+    Size cols() const { return static_cast<const Derived*>(this)->cols(); }
 
     auto _brepeat(Size rows, Size cols) const
     {
@@ -160,7 +161,7 @@ public:
         return Unary<T, Derived, Func>(derived(), func);
     }
     template <typename T, typename Expr2, typename Func, typename = IsExpr<Expr2>>
-    auto binary(const Expr2 &expr2, Func func) const
+    auto binary(const Expr2& expr2, Func func) const
     {
         if (this->rows() != 1 && expr2.rows() != 1)
             TENSE_MASSERT(this->rows(), ==, expr2.rows(), "binary", "Rows of matrices must be equal")
@@ -267,46 +268,46 @@ public:
         TENSE_MASSERT(cols.end, <=, this->cols(), "index", "Input col end can't be out of range")
         return RIndex<Derived>(derived(), rows, cols);
     }
-    auto index(Cut rows, const std::vector<Size> &cols) const
+    auto index(Cut rows, const std::vector<Size>& cols) const
     {
         if (rows.step == 0) rows = {this->rows()};
         TENSE_MASSERT(rows.start, <=, this->rows(), "index", "Input row start can't be out of range")
         TENSE_MASSERT(rows.end, <=, this->rows(), "index", "Input row end can't be out of range")
         return RVIndex<Derived>(derived(), rows, cols);
     }
-    auto index(const std::vector<Size> &rows, Cut cols) const
+    auto index(const std::vector<Size>& rows, Cut cols) const
     {
         if (cols.step == 0) cols = {this->cols()};
         TENSE_MASSERT(cols.start, <=, this->cols(), "index", "Input col start can't be out of range")
         TENSE_MASSERT(cols.end, <=, this->cols(), "index", "Input col end can't be out of range")
         return VRIndex<Derived>(derived(), rows, cols);
     }
-    auto index(const std::vector<Size> &rows, const std::vector<Size> &cols) const
+    auto index(const std::vector<Size>& rows, const std::vector<Size>& cols) const
     {
         return VIndex<Derived>(derived(), rows, cols);
     }
-    auto index(const std::initializer_list<Size> &rows, const std::initializer_list<Size> &cols) const
+    auto index(const std::initializer_list<Size>& rows, const std::initializer_list<Size>& cols) const
     {
         return index(std::vector<Size>(rows), std::vector<Size>(cols));
     }
-    auto index(const Cut &rows, const std::initializer_list<Size> &cols) const
+    auto index(const Cut& rows, const std::initializer_list<Size>& cols) const
     {
         return index(rows, std::vector<Size>(cols));
     }
-    auto index(const std::initializer_list<Size> &rows, const Cut &cols) const
+    auto index(const std::initializer_list<Size>& rows, const Cut& cols) const
     {
         return index(std::vector<Size>(rows), cols);
     }
 
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto rindirect(const Expr2 &expr2)
+    auto rindirect(const Expr2& expr2)
     {
         TENSE_MASSERT(rows(), ==, expr2.rows(), "rindirect", "Rows of matrices must be equal")
         TENSE_MASSERT(cols(), ==, expr2.cols(), "rindirect", "Cols of matrices must be equal")
         return RIndirect<Derived, Expr2>(derived(), expr2);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto cindirect(const Expr2 &expr2)
+    auto cindirect(const Expr2& expr2)
     {
         TENSE_MASSERT(rows(), ==, expr2.rows(), "cindirect", "Rows of matrices must be equal")
         TENSE_MASSERT(cols(), ==, expr2.cols(), "cindirect", "Cols of matrices must be equal")
@@ -314,26 +315,26 @@ public:
     }
 
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto rcat0(const Expr2 &expr2) const
+    auto rcat0(const Expr2& expr2) const
     {
         TENSE_MASSERT(this->cols(), ==, expr2.cols(), "rcat", "Cols of matrices must be equal")
         return RCat0<Derived, Expr2>(derived(), expr2, this->rows() + expr2.rows());
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto ccat0(const Expr2 &expr2) const
+    auto ccat0(const Expr2& expr2) const
     {
         TENSE_MASSERT(this->rows(), ==, expr2.rows(), "ccat", "Rows of matrices must be equal")
         return CCat0<Derived, Expr2>(derived(), expr2, this->cols() + expr2.cols());
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto rcat1(const Expr2 &expr2) const
+    auto rcat1(const Expr2& expr2) const
     {
         TENSE_MASSERT(this->rows(), ==, expr2.rows(), "ircat", "Rows of matrices must be equal")
         TENSE_MASSERT(this->cols(), ==, expr2.cols(), "ircat", "Cols of matrices must be equal")
         return RCat1<Derived, Expr2>(derived(), expr2);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto ccat1(const Expr2 &expr2) const
+    auto ccat1(const Expr2& expr2) const
     {
         TENSE_MASSERT(this->rows(), ==, expr2.rows(), "iccat", "Rows of matrices must be equal")
         TENSE_MASSERT(this->cols(), ==, expr2.cols(), "iccat", "Cols of matrices must be equal")
@@ -443,14 +444,14 @@ public:
         return IWhere<Derived, Func>(derived(), func, val);
     }
     template <typename Func, typename Expr2, typename = IsExpr<Expr2>>
-    auto where(Func func, const Expr2 &expr2) const
+    auto where(Func func, const Expr2& expr2) const
     {
         TENSE_MASSERT(this->rows(), ==, expr2.rows(), "where", "Rows of matrices must be equal")
         TENSE_MASSERT(this->cols(), ==, expr2.cols(), "where", "Rows of matrices must be equal")
         return FEWhere<Derived, Expr2, Func>(derived(), expr2, func);
     }
     template <typename Func, typename Expr2, typename = IsExpr<Expr2>>
-    auto iwhere(Func func, const Expr2 &expr2) const
+    auto iwhere(Func func, const Expr2& expr2) const
     {
         TENSE_MASSERT(this->rows(), ==, expr2.rows(), "iwhere", "Rows of matrices must be equal")
         TENSE_MASSERT(this->cols(), ==, expr2.cols(), "iwhere", "Rows of matrices must be equal")
@@ -545,22 +546,22 @@ public:
     }
 
     template <Size P, typename Expr2, typename = IsExpr<Expr2>>
-    auto bdistance(Size rows, Size cols, const Expr2 &expr2) const
+    auto bdistance(Size rows, Size cols, const Expr2& expr2) const
     {
         return derived().sub(expr2).template bnorm<P>(rows, cols);
     }
     template <Size P, typename Expr2, typename = IsExpr<Expr2>>
-    auto rdistance(const Expr2 &expr2) const
+    auto rdistance(const Expr2& expr2) const
     {
         return derived().sub(expr2).template rnorm<P>();
     }
     template <Size P, typename Expr2, typename = IsExpr<Expr2>>
-    auto cdistance(const Expr2 &expr2) const
+    auto cdistance(const Expr2& expr2) const
     {
         return derived().sub(expr2).template cnorm<P>();
     }
     template <Size P, typename Expr2, typename = IsExpr<Expr2>>
-    auto distance(const Expr2 &expr2) const
+    auto distance(const Expr2& expr2) const
     {
         return derived().sub(expr2).template norm<P>();
     }
@@ -616,7 +617,7 @@ public:
     }
 
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto bcov(const Expr2 &expr2, Size rows, Size cols, Size dof = 0) const
+    auto bcov(const Expr2& expr2, Size rows, Size cols, Size dof = 0) const
     {
         TENSE_MASSERT(this->rows(), ==, expr2.rows(), "bcov", "Rows of matrices must be the same")
         TENSE_MASSERT(this->cols(), ==, expr2.cols(), "bcov", "Cols of matrices must be the same")
@@ -627,7 +628,7 @@ public:
         return (_expr1 - _expr2) / (size - dof);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto rcov(const Expr2 &expr2, Size dof = 0) const
+    auto rcov(const Expr2& expr2, Size dof = 0) const
     {
         TENSE_MASSERT(this->rows(), ==, expr2.rows(), "rcov", "Rows of matrices must be the same")
         TENSE_MASSERT(this->cols(), ==, expr2.cols(), "rcov", "Cols of matrices must be the same")
@@ -638,7 +639,7 @@ public:
         return (_expr1 - _expr2) / (size - dof);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto ccov(const Expr2 &expr2, Size dof = 0) const
+    auto ccov(const Expr2& expr2, Size dof = 0) const
     {
         TENSE_MASSERT(this->rows(), ==, expr2.rows(), "ccov", "Rows of matrices must be the same")
         TENSE_MASSERT(this->cols(), ==, expr2.cols(), "ccov", "Cols of matrices must be the same")
@@ -649,7 +650,7 @@ public:
         return (_expr1 - _expr2) / (size - dof);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto cov(const Expr2 &expr2, Size dof = 0) const
+    auto cov(const Expr2& expr2, Size dof = 0) const
     {
         TENSE_MASSERT(this->rows(), ==, expr2.rows(), "cov", "Rows of matrices must be the same")
         TENSE_MASSERT(this->cols(), ==, expr2.cols(), "cov", "Cols of matrices must be the same")
@@ -686,22 +687,22 @@ public:
     auto equal(Type expr2) const { return derived().eq(expr2).all(); }
 
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto bequal(Size rows, Size cols, const Expr2 &expr2) const
+    auto bequal(Size rows, Size cols, const Expr2& expr2) const
     {
         return derived().eq(expr2).ball(rows, cols);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto requal(const Expr2 &expr2) const
+    auto requal(const Expr2& expr2) const
     {
         return derived().eq(expr2).rall();
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto cequal(const Expr2 &expr2) const
+    auto cequal(const Expr2& expr2) const
     {
         return derived().eq(expr2).call();
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto equal(const Expr2 &expr2) const
+    auto equal(const Expr2& expr2) const
     {
         return derived().eq(expr2).all();
     }
@@ -761,7 +762,7 @@ public:
         return derived().sub(expr2).abs().le(expr3).all();
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto close(const Expr2 &expr2, typename FromComplex<Type>::Type expr3 = 1e-5) const
+    auto close(const Expr2& expr2, typename FromComplex<Type>::Type expr3 = 1e-5) const
     {
         return derived().sub(expr2).abs().le(expr3).all();
     }
@@ -775,14 +776,14 @@ public:
     auto clip(Type val2, Type val3) const
     {
         if (val2 > val3) std::swap(val2, val3);
-        return unary<Type>([val2, val3](auto val1) { return std::min(std::max(val1, val2), val3); });
+        return unary<Type>([val2, val3](auto val1) { return std::clamp(val1, val2, val3); });
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto dot(const Expr2 &expr2) const
+    auto dot(const Expr2& expr2) const
     {
-        const auto &expr1 = derived();
-        TENSE_MASSERT(std::min(expr1.rows(), expr1.cols()), ==, 1, "dot", "Fist matrix must be 1D")
-        TENSE_MASSERT(std::min(expr2.rows(), expr2.cols()), ==, 1, "dot", "Fist matrix must be 1D")
+        const auto& expr1 = derived();
+        TENSE_MASSERT(std::min(expr1.rows(), expr1.cols()), ==, 1, "dot", "First matrix must be 1D")
+        TENSE_MASSERT(std::min(expr2.rows(), expr2.cols()), ==, 1, "dot", "First matrix must be 1D")
 
         if (expr1.rows() == 1 && expr2.cols() == 1 && expr1.cols() == expr2.rows())
             return expr1.mul(expr2.trans()).sum();
@@ -827,7 +828,7 @@ public:
         auto step = (end - start) / (rows * cols);
         return Sequence<Major, Type>(rows, cols, start, step);
     }
-    static auto strided(Size rows, Size cols, Type *data, Size rstride, Size cstride)
+    static auto strided(Size rows, Size cols, Type* data, Size rstride, Size cstride)
     {
         TENSE_MASSERT(rows, >, 0, "seq", "Input rows can't be zero")
         TENSE_MASSERT(cols, >, 0, "seq", "Input cols can't be zero")
@@ -841,7 +842,7 @@ public:
         return Static<Major, Type, Rows, Cols>(value);
     }
     template <Size Rows, Size Cols>
-    static auto stat(const std::vector<Type> &list)
+    static auto stat(const std::vector<Type>& list)
     {
         static_assert(Rows > 0, "Rows can't be zero in Matrix::static");
         static_assert(Cols > 0, "Cols can't be zero in Matrix::static");
@@ -1007,7 +1008,8 @@ public:
     {
         return csortidx([](auto i, auto j) { return i < j; });
     }
-    // TODO rsortidx?
+    // TODO sortidx?
+    // TODO sort/shuffle idx functions should be heavy aware
 
     auto rshuffle() const
     {
@@ -1033,7 +1035,7 @@ public:
     ////////////////////////////////////////////////////////////////////////////
 
     template <typename Expr2, typename Expr3, typename = IsExpr<Expr2>, typename = IsExpr<Expr3>>
-    auto _mm(const Expr2 &expr2, Expr3 &expr3) const
+    auto _mm(const Expr2& expr2, Expr3& expr3) const
     {
         TENSE_MASSERT(this->cols(), ==, expr2.rows(), "mm",
                       "Cols of first matrix must be equal to rows of second matrix")
@@ -1045,7 +1047,7 @@ public:
         Backend::multiply(derived(), expr2, expr3);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto mm(const Expr2 &expr2, Matrix<Major, Type> &expr3) const
+    auto mm(const Expr2& expr2, Matrix<Major, Type>& expr3) const
     {
         static_assert(std::is_same<Type, typename Expr2::Type>::value,
                       "Data type of matrices must be the same in matrix::mm.");
@@ -1065,14 +1067,14 @@ public:
             External::multiply(derived(), expr2, expr3);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto _mm(const Expr2 &expr2) const
+    auto _mm(const Expr2& expr2) const
     {
         Matrix<Major, Type> expr3(this->rows(), expr2.cols());
         _mm(expr2, expr3);
         return expr3;
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto mm(const Expr2 &expr2) const
+    auto mm(const Expr2& expr2) const
     {
         Matrix<Major, Type> expr3(this->rows(), expr2.cols());
         mm(expr2, expr3);
@@ -1114,7 +1116,7 @@ public:
         return External::schur(derived(), vectors);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto solve(const Expr2 &expr2) const
+    auto solve(const Expr2& expr2) const
     {
         TENSE_MASSERT(this->rows(), ==, this->cols(), "solve", "Matrix must be square")
         TENSE_MASSERT(this->rows(), ==, expr2.rows(), "solve",
@@ -1129,7 +1131,7 @@ public:
         return External::solve(derived(), expr2);
     }
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto ls(const Expr2 &expr2) const
+    auto ls(const Expr2& expr2) const
     {
         TENSE_MASSERT(this->rows(), ==, expr2.rows(), "ls",
                       "Second dimention of matrix must be equal to rows of right hand size")
@@ -1200,15 +1202,15 @@ public:
     UNARY0(neg, -val1)
     UNARY0(pos, +val1)
     UNARY0(_not, !val1)
-    UNARY0(square, val1 *val1)
-    UNARY0(cube, val1 *val1 *val1)
+    UNARY0(square, val1* val1)
+    UNARY0(cube, val1 * val1 * val1)
     UNARY0(frac, val1 - std::floor(val1))
     UNARY0(ln, std::log(val1))
     UNARY0(rev, 1 / val1)
     UNARY0(rsqrt, 1 / std::sqrt(val1))
     UNARY0(relu, std::fmax(0, val1))
     UNARY0(sigmoid, 1 / (1 + std::exp(-val1)))
-    UNARY0(deg2rad, val1 *M_PI / 180)
+    UNARY0(deg2rad, val1* M_PI / 180)
     UNARY0(rad2deg, val1 * 180 / M_PI)
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1228,10 +1230,10 @@ public:
     UNARY1(fmax, Type, std::fmin(val1, val2))
     UNARY1(add, Type, val1 + val2)
     UNARY1(sub, Type, val1 - val2)
-    UNARY1(mul, Type, val1 *val2)
+    UNARY1(mul, Type, val1* val2)
     UNARY1(div, Type, val1 / val2)
     UNARY1(mod, Type, val1 % val2)
-    UNARY1(_and, Type, val1 &val2)
+    UNARY1(_and, Type, val1& val2)
     UNARY1(_or, Type, val1 | val2)
     UNARY1(_xor, Type, val1 ^ val2)
     UNARY1(lshift, Size, val1 << val2)
@@ -1274,10 +1276,10 @@ public:
 
     BINARY(add, val1 + val2)
     BINARY(sub, val1 - val2)
-    BINARY(mul, val1 *val2)
+    BINARY(mul, val1* val2)
     BINARY(div, val1 / val2)
     BINARY(mod, val1 % val2)
-    BINARY(_and, val1 &val2)
+    BINARY(_and, val1& val2)
     BINARY(_or, val1 | val2)
     BINARY(_xor, val1 ^ val2)
     BINARY(atan2, std::atan2(val1, val2))
@@ -1291,7 +1293,7 @@ public:
     ////////////////////////////////////////////////////////////////////////////
 
     REDUCE0(sum, 0, val1 + val2)
-    REDUCE0(prod, 1, val1 *val2)
+    REDUCE0(prod, 1, val1* val2)
     REDUCE0(max, std::numeric_limits<Type>::min(), std::max(val1, val2))
     REDUCE0(min, std::numeric_limits<Type>::max(), std::min(val1, val2))
     _REDUCE1(count, Size, Type, 0, val1 + (val2 == val3))
@@ -1330,12 +1332,12 @@ public:
     OPERATOR1(rshift, revrshift, >>)
 
     template <typename Expr2, typename = IsExpr<Expr2>>
-    auto operator*(const Expr2 &expr2) const
+    auto operator*(const Expr2& expr2) const
     {
         return derived().mm(expr2);
     }
     auto operator*(Type expr2) const { return derived().mul(expr2); }
-    friend auto operator*(Type expr2, const Derived &expr1) { return expr1.mul(expr2); }
+    friend auto operator*(Type expr2, const Derived& expr1) { return expr1.mul(expr2); }
 };
 }  // namespace Tense::MatrixImpl
 
