@@ -819,11 +819,11 @@ public:
         return Eye<Major, Type>(rows, cols);
     }
     template <typename Dist>
-    static auto dist(Size rows, Size cols, Dist dist)
+    static auto dist(Size rows, Size cols, Dist&& dist)
     {
         TENSE_MASSERT(rows, >, 0, "dist", "Input rows can't be zero")
         TENSE_MASSERT(cols, >, 0, "dist", "Input cols can't be zero")
-        return Distribution<Major, Type, Dist>(rows, cols, dist);
+        return Distribution<Major, Type, Dist>(rows, cols, std::forward<Dist>(dist));
     }
     static auto seq(Size rows, Size cols, Type start, Type end)
     {
@@ -895,7 +895,7 @@ public:
         else if constexpr (std::is_floating_point<Type>::value)
             return dist(rows, cols, std::uniform_real_distribution<Type>(a, b));
         else
-            throw std::runtime_error("Data type not supported in matrix::uniform.");
+            static_assert(false, "Data type not supported in matrix::uniform.");
     }
     static auto bernoulli(Size rows, Size cols, double p = 0.5)
     {

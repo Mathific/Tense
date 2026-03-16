@@ -49,7 +49,6 @@
 // TODO conditio openmp pragmas on size
 // TODO fwhere and constant readable or writable?
 // TODO detect overlapping read/writes and eval first
-// TODO add block reduce to vector
 // TODO sort based on expr not ptr
 // TODO replace var/cov with two-pass algorithm
 // TODO shape should be small vector

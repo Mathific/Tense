@@ -351,10 +351,10 @@ public:
         return Constant<Type>(shape, val);
     }
     template <typename Dist>
-    static auto dist(const Shape& shape, Dist dist)
+    static auto dist(const Shape& shape, Dist&& dist)
     {
         Helper::check(shape);
-        return Distribution<Type, Dist>(shape, dist);
+        return Distribution<Type, Dist>(shape, std::forward<Dist>(dist));
     }
     static auto seq(const Shape& shape, Type start, Type end)
     {
@@ -400,7 +400,7 @@ public:
             return dist(shape, std::uniform_int_distribution<Type>(a, b));
         else if constexpr (std::is_floating_point<Type>::value)
             return dist(shape, std::uniform_real_distribution<Type>(a, b));
-        throw std::runtime_error("Data type not supported for uniform operation in tensor::uniform.");
+        static_assert(false, "Data type not supported in tensor::uniform.");
     }
     static auto bernoulli(const Shape& shape, double p = 0.5)  //
     {

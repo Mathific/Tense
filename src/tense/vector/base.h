@@ -152,7 +152,7 @@ public:
     template <typename T, typename Func>
     auto reduce(T init, Func func) const
     {
-        return Reduce<T, Derived, Func>(derived(), func, init).item();
+        return Reduce<T, Derived, Func>(derived(), func, init);
     }
 
     auto block(Size i, Size size) const

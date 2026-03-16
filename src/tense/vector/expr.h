@@ -193,22 +193,13 @@ public:
 };
 
 template <typename T, typename Expr1, typename Func>
-FLAGGED(Reduce, HeavyFlag, Readable, T, T C Expr1 C Func, 1)
-    typename Alias<Expr1, Status>::Type _expr1;
-    const Func _func;
-    const Type _init;
-    const Size _size;
-
-public:
-    Reduce(const Expr1 &expr1, Func func, Type init)
-        : _expr1(expr1), _func(func), _init(init), _size(expr1.size()) {}
-    Type operator[](Size) const
-    {
-        Type val = _init;
-        for (Size i=0; i < _size; ++i) val = _func(val, _expr1[i]);
-        return val;
-    }
-};
+T Reduce(const Expr1 &expr1, Func func, T init)
+{
+    T val = init;
+    const Size size = expr1.size();
+    for (Size i=0; i < size; ++i) val = func(val, expr1[i]);
+    return val;
+}
 
 template <typename Expr1>
 EXPR(SBlock, typename Expr1::Status, typename Expr1::Type, Expr1, _size)
@@ -324,22 +315,15 @@ public:
 };
 
 template <typename Expr1, typename Func>
-FLAGGED(Redux, HeavyFlag, Readable, Size, Expr1 C Func, 1)
-    typename Alias<Expr1, Status>::Type _expr1;
-    const Func _func;
-    const Size _size;
-
-public:
-    Redux(const Expr1 &expr1, Func func) : _expr1(expr1), _func(func), _size(expr1.size()) {}
-    Type operator[](Size) const
-    {
-        Size index = 0;
-        typename Expr1::Type val = _expr1[0];
-        for (Size i = 0; i < _size; ++i)
-            if (_func(_expr1[i], val)) index = i, val = _expr1[i];
-        return index;
-    }
-};
+Size Redux(const Expr1 &expr1, Func func)
+{
+    Size index = 0;
+    const Size size = expr1.size();
+    typename Expr1::Type val = expr1[0];
+    for (Size i = 0; i < size; ++i)
+        if (func(expr1[i], val)) index = i, val = expr1[i];
+    return index;
+}
 
 template <int P, typename Expr1>
 EXPR(Power, Readable, typename Expr1::Type, P C Expr1, _expr1.size())

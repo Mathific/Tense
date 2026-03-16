@@ -532,11 +532,11 @@ TYPED_TEST(VectorRealTest, MinMaxIndices)
     EXPECT_EQ(v.min(), TypeParam(1));
 
     // Should return the index of the first maximum/minimum
-    auto max_idx = v.maxidx().eval();
-    EXPECT_EQ(max_idx[0], Size(1));
+    auto max_idx = v.maxidx();
+    EXPECT_EQ(max_idx, Size(1));
 
-    auto min_idx = v.minidx().eval();
-    EXPECT_EQ(min_idx[0], Size(2));
+    auto min_idx = v.minidx();
+    EXPECT_EQ(min_idx, Size(2));
 }
 
 TYPED_TEST(VectorFloatTest, MeanVarianceAndStdDev)

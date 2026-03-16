@@ -757,7 +757,7 @@ EXPR(Distribution, Readable, M, T, M C T C Dist, _rows, _cols)
     Type operator()(Size i, Size j) { return Type(_dist(_rand)); }
 
 public:
-    Distribution(Size rows, Size cols, Dist dist) : _dist(std::move(dist)), _rand(rand()), _rows(rows), _cols(cols) {}
+    Distribution(Size rows, Size cols, Dist &&dist) : _dist(std::forward<Dist>(dist)), _rand(rand()), _rows(rows), _cols(cols) {}
     Type operator()(Size i, Size j) const { return const_cast<Distribution<M, Type, Dist> &>(*this)(i, j); }
 };
 

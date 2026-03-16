@@ -404,7 +404,7 @@ EXPR(Distribution, Readable, T, T C Dist, _shape)
     Type operator[](Size) { return Type(_dist(_rand)); }
 
 public:
-    Distribution(const Shape &shape, Dist dist) : _dist(std::move(dist)), _rand(rand()), _shape(shape) {}
+    Distribution(const Shape &shape, Dist &&dist) : _dist(std::forward<Dist>(dist)), _rand(rand()), _shape(shape) {}
     Type operator[](Size idx) const { return const_cast<Distribution<Type, Dist> &>(*this)[idx]; }
 };
 
