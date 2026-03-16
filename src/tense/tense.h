@@ -53,3 +53,13 @@
 // TODO sort based on expr not ptr
 // TODO replace var/cov with two-pass algorithm
 // TODO shape should be small vector
+// TODO replace reduction expression in vector with actual computation
+// TODO maybe remove semi-colon from asserts
+// TODO use std::array in static
+// TODO maybe implement sortidx and shuffleidx
+// TODO sort/shuffle idx functions should be heavy aware
+// TODO distribution is not thread-safe (vector, matrix, tensor)
+// TODO Alias might cause temp Static to be held as reference (vector, matrix, tensor)
+// TODO cov with self in matrix?
+// TODO % is not performant in repeat (vector, matrix, tensor)
+// TODO custom deleter and better valid check to prevent illigal access

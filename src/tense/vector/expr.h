@@ -165,7 +165,6 @@ template <typename Expr1>
 EXPR(Repeat, Readable, typename Expr1::Type, Expr1, _size)
     typename Alias<Expr1, Status>::Type _expr1;
     const Size _size, _size2;
-    // TODO % is not performant (vector, matrix, tensor)
 
 public:
     Repeat(const Expr1 &expr1, Size size)
@@ -173,12 +172,32 @@ public:
    Type operator[](Size i) const { return _expr1[i % _size2]; }
 };
 
+
+template <typename T, typename Expr1, typename Func>
+FLAGGED(BReduce, HeavyFlag, Readable, T, T C Expr1 C Func, _expr1.size() / _size)
+    typename Alias<Expr1, Status>::Type _expr1;
+    const Func _func;
+    const Type _init;
+    const Size _size;
+
+public:
+    BReduce(const Expr1 &expr1, Func func, Type init, Size size)
+        : _expr1(expr1), _func(func), _init(init), _size(size) {}
+    Type operator[](Size i) const
+    {
+        Type val = _init;
+        Size si = i * _size;
+        for (Size i = si; i < si + _size; ++i) val = _func(val, _expr1[i]);
+        return val;
+    }
+};
+
 template <typename T, typename Expr1, typename Func>
 FLAGGED(Reduce, HeavyFlag, Readable, T, T C Expr1 C Func, 1)
     typename Alias<Expr1, Status>::Type _expr1;
     const Func _func;
-    const Size _size;
     const Type _init;
+    const Size _size;
 
 public:
     Reduce(const Expr1 &expr1, Func func, Type init)
@@ -425,7 +444,7 @@ EXPR(Distribution, Readable, T, T C Dist, _size)
     Type operator[](Size i) { return Type(_dist(_rand)); }
 
 public:
-    Distribution(Size size, Dist &&dist) : _dist(std::move(dist)), _rand(rand()), _size(size) {}
+    Distribution(Size size, Dist &&dist) : _dist(std::forward<Dist>(dist)), _rand(rand()), _size(size) {}
     Type operator[](Size i) const { return const_cast<Distribution<Type, Dist> &>(*this)[i]; }
 };
 
@@ -488,7 +507,7 @@ auto MinIdx(const Expr1 &expr1)
 template <typename Expr1>
 auto BFlip(const Expr1 &expr1, Size size)
 {
-    auto func = [size](auto i, auto j, const auto &expr)
+    auto func = [size](auto i, const auto &expr)
     { return expr[i + size - 1 - 2 * (i % size)]; };
     return Access<Expr1, decltype(func)>(expr1, func);
 }

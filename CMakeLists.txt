@@ -41,7 +41,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 
 set(TENSE_VERSION ${PROJECT_VERSION} CACHE INTERNAL "")
-option(TENSE_ENABLE_FLAGS "Build for Native Architecture" ON)
+option(TENSE_ENABLE_FLAGS "Build for Native Architecture" OFF)
 option(TENSE_ENABLE_TESTS "Build Tense Tests" ${TENSE_MASTER})
 option(TENSE_ENABLE_EXAMPLES "Build Tense Examples" ${TENSE_MASTER})
 option(TENSE_ENABLE_INSTALL "Install Tense Library" ${TENSE_MASTER})
@@ -80,7 +80,7 @@ if(TENSE_ENABLE_OPENMP)
 
     message("Tense OpenMP Enabled!")
 else()
-    message("Tense OpenMP Enabled!")
+    message("Tense OpenMP Disabled!")
 endif()
 
 if(TENSE_ENABLE_BLAS)
@@ -91,7 +91,7 @@ if(TENSE_ENABLE_BLAS)
 
     message("Tense BLAS Enabled!")
 else()
-    message("Tense BLAS Enabled!")
+    message("Tense BLAS Disabled!")
 endif()
 
 if(TENSE_NATIVE_FLAGS)
@@ -99,7 +99,7 @@ if(TENSE_NATIVE_FLAGS)
 
     message("Tense Flags Enabled!")
 else()
-    message("Tense Flags Enabled!")
+    message("Tense Flags Disabled!")
 endif()
 
 add_library(Tense::Tense ALIAS Tense)
@@ -159,7 +159,7 @@ if(TENSE_ENABLE_TESTS)
     add_subdirectory(./test/gtest/)
 
     add_executable(tests
-        "test/tests.cpp" "test/matrix.cpp" "test/tensor.cpp"
+        "test/tests.cpp" "test/vector.cpp" #"test/matrix.cpp" "test/tensor.cpp"
         ${HEADERS} ${VECTOR_HEADERS} ${MATRIX_HEADERS} ${TENSOR_HEADERS})
     target_link_libraries(tests PUBLIC
         Tense::Tense gtest gtest_main)

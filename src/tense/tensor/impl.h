@@ -128,9 +128,12 @@ public:
     }
     Type* release()
     {
-        _shared->owner = false;
         auto data = _shared->data;
+        _shared->owner = false;
         _shared->data = nullptr;
+        _shared->shape = Shape();
+        _shared->stride = Shape();
+        _shared = DataPtr();
         return data;
     }
     template <typename Major>

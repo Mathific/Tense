@@ -61,16 +61,24 @@
         return binary<TYPE, Expr2>(expr2, [](auto val1, auto val2) { return FUNC; }); \
     }
 
-#define _REDUCE0(NAME, TYPE, INIT, FUNC)                                      \
-    auto NAME() const                                                         \
-    {                                                                         \
-        return reduce<TYPE>(INIT, [](auto val1, auto val2) { return FUNC; }); \
+#define _REDUCE0(NAME, TYPE, INIT, FUNC)                                             \
+    auto b##NAME(Size size) const                                                    \
+    {                                                                                \
+        return breduce<TYPE>(size, INIT, [](auto val1, auto val2) { return FUNC; }); \
+    }                                                                                \
+    auto NAME() const                                                                \
+    {                                                                                \
+        return reduce<TYPE>(INIT, [](auto val1, auto val2) { return FUNC; });        \
     }
 
-#define _REDUCE1(NAME, TYPE, VTYPE, INIT, FUNC)                                   \
-    auto NAME(VTYPE val3) const                                                   \
-    {                                                                             \
-        return reduce<TYPE>(INIT, [val3](auto val1, auto val2) { return FUNC; }); \
+#define _REDUCE1(NAME, TYPE, VTYPE, INIT, FUNC)                                          \
+    auto b##NAME(Size size, VTYPE val3) const                                            \
+    {                                                                                    \
+        return breduce<TYPE>(size, INIT, [val3](auto val1, auto val2) { return FUNC; }); \
+    }                                                                                    \
+    auto NAME(VTYPE val3) const                                                          \
+    {                                                                                    \
+        return reduce<TYPE>(INIT, [val3](auto val1, auto val2) { return FUNC; });        \
     }
 
 #define OPERATOR0(NAME, OP) \
@@ -97,11 +105,11 @@ template <typename Type, typename Derived>
 class Base : public Expr
 {
     const Derived& derived() const { return *static_cast<const Derived*>(this); }
-    Size size() const { return derived()->size(); }
+    Size size() const { return derived().size(); }
 
     auto _repeat(Size size) const
     {
-        TENSE_TASSERT(size, >, 0, "repeat", "Input size can't be zero")
+        TENSE_VASSERT(size, >, 0, "repeat", "Input size can't be zero")
         return Repeat<Derived>(derived(), size * this->size());
     }
 
@@ -135,6 +143,13 @@ public:
     }
 
     template <typename T, typename Func>
+    auto breduce(Size size, T init, Func func) const
+    {
+        TENSE_VASSERT(size, >, 0, "breduce", "Input size can't be zero")
+        TENSE_VASSERT(this->size() % size, ==, 0, "breduce", "Vector size must be divisable by input rows")
+        return BReduce<T, Derived, Func>(derived(), func, init, size);
+    }
+    template <typename T, typename Func>
     auto reduce(T init, Func func) const
     {
         return Reduce<T, Derived, Func>(derived(), func, init).item();
@@ -142,13 +157,13 @@ public:
 
     auto block(Size i, Size size) const
     {
-        TENSE_TASSERT(size, >, 0, "block", "Input size can't be zero")
-        TENSE_TASSERT(i + size, <=, this->size(), "block", "Block bounds can't be out of range")
+        TENSE_VASSERT(size, >, 0, "block", "Input size can't be zero")
+        TENSE_VASSERT(i + size, <=, this->size(), "block", "Block bounds can't be out of range")
         return SBlock<Derived>(derived(), i, size);
     }
     auto elem(Size size) const
     {
-        TENSE_TASSERT(size, <, this->size(), "elem", "Input row can't be out of range")
+        TENSE_VASSERT(size, <, this->size(), "elem", "Input row can't be out of range")
         return SElem<Derived>(derived(), size);
     }
 
@@ -156,8 +171,8 @@ public:
     {
         auto _size = SSize(this->size());
         if (cut.step == 0) cut = Cut{_size};
-        TENSE_TASSERT(cut.start, <=, SSize(_size), "index", "Input row start can't be out of range")
-        TENSE_TASSERT(cut.end, <=, SSize(_size), "index", "Input row end can't be out of range")
+        TENSE_VASSERT(cut.start, <=, SSize(_size), "index", "Input row start can't be out of range")
+        TENSE_VASSERT(cut.end, <=, SSize(_size), "index", "Input row end can't be out of range")
         return RIndex<Derived>(derived(), cut);
     }
     auto index(const std::vector<Size>& indices) const { return VIndex<Derived>(derived(), indices); }
@@ -165,7 +180,7 @@ public:
     template <typename Expr2, typename = IsExpr<Expr2>>
     auto rindirect(const Expr2& expr2)
     {
-        TENSE_TASSERT(size(), ==, expr2.size(), "indirect", "Size of vectors must be equal")
+        TENSE_VASSERT(size(), ==, expr2.size(), "indirect", "Size of vectors must be equal")
         return Indirect<Derived, Expr2>(derived(), expr2);
     }
 
@@ -177,13 +192,13 @@ public:
     template <typename Expr2, typename = IsExpr<Expr2>>
     auto cat1(const Expr2& expr2) const
     {
-        TENSE_TASSERT(this->size(), ==, expr2.size(), "ircat", "Size of vectors must be equal")
+        TENSE_VASSERT(this->size(), ==, expr2.size(), "ircat", "Size of vectors must be equal")
         return Cat1<Derived, Expr2>(derived(), expr2);
     }
 
     auto turn(Size size) const
     {
-        TENSE_TASSERT(size, <=, this->size(), "turn", "Input size can't be higher than vector size")
+        TENSE_VASSERT(size, <=, this->size(), "turn", "Input size can't be higher than vector size")
         return Turn<Derived>(derived(), this->size() - size);
     }
 
@@ -192,24 +207,24 @@ public:
 
     auto ball(Size size) const
     {
-        TENSE_TASSERT(size, >, 0, "ball", "Input size can't be zero")
-        TENSE_TASSERT(this->size() % size, ==, 0, "ball", "Vector size must be divisable by input size")
+        TENSE_VASSERT(size, >, 0, "ball", "Input size can't be zero")
+        TENSE_VASSERT(this->size() % size, ==, 0, "ball", "Vector size must be divisable by input size")
         return BAny<std::false_type, Derived>(derived(), size);
     }
     auto all() const { return Any<std::false_type, Derived>(derived()).item(); }
 
     auto bany(Size size) const
     {
-        TENSE_TASSERT(size, >, 0, "bany", "Input size can't be zero")
-        TENSE_TASSERT(this->size() % size, ==, 0, "bany", "Vector size must be divisable by input size")
+        TENSE_VASSERT(size, >, 0, "bany", "Input size can't be zero")
+        TENSE_VASSERT(this->size() % size, ==, 0, "bany", "Vector size must be divisable by input size")
         return BAny<std::true_type, Derived>(derived(), size);
     }
     auto any() const { return Any<std::true_type, Derived>(derived()).item(); }
 
     auto bflip(Size size) const
     {
-        TENSE_TASSERT(size, >, 0, "bflip", "Input size can't be zero")
-        TENSE_TASSERT(this->size() % size, ==, 0, "bflip", "Vector size must be divisable by input size")
+        TENSE_VASSERT(size, >, 0, "bflip", "Input size can't be zero")
+        TENSE_VASSERT(this->size() % size, ==, 0, "bflip", "Vector size must be divisable by input size")
         return BFlip<Derived>(derived(), size);
     }
     auto flip() const { return Flip<Derived>(derived()); }
@@ -241,13 +256,13 @@ public:
     template <typename Func, typename Expr2, typename = IsExpr<Expr2>>
     auto where(Func func, const Expr2& expr2) const
     {
-        TENSE_TASSERT(this->size(), ==, expr2.size(), "where", "Size of vectors must be equal")
+        TENSE_VASSERT(this->size(), ==, expr2.size(), "where", "Size of vectors must be equal")
         return FEWhere<Derived, Expr2, Func>(derived(), expr2, func);
     }
     template <typename Func, typename Expr2, typename = IsExpr<Expr2>>
     auto iwhere(Func func, const Expr2& expr2) const
     {
-        TENSE_TASSERT(this->size(), ==, expr2.size(), "iwhere", "Size of vectors must be equal")
+        TENSE_VASSERT(this->size(), ==, expr2.size(), "iwhere", "Size of vectors must be equal")
         return IEWhere<Derived, Expr2, Func>(derived(), expr2, func);
     }
 
@@ -333,7 +348,7 @@ public:
     template <typename Expr2, typename = IsExpr<Expr2>>
     auto bcov(const Expr2& expr2, Size size, Size dof = 0) const
     {
-        TENSE_TASSERT(this->size(), ==, expr2.size(), "bcov", "Size of vectors must be the same")
+        TENSE_VASSERT(this->size(), ==, expr2.size(), "bcov", "Size of vectors must be the same")
 
         auto _expr1 = derived().mul(expr2).bsum(size);
         auto _expr2 = derived().bsum(size).mul(expr2.bsum()) / size;
@@ -342,7 +357,7 @@ public:
     template <typename Expr2, typename = IsExpr<Expr2>>
     auto cov(const Expr2& expr2, Size dof = 0) const
     {
-        TENSE_TASSERT(this->size(), ==, expr2.size(), "cov", "Size of vectors must be the same")
+        TENSE_VASSERT(this->size(), ==, expr2.size(), "cov", "Size of vectors must be the same")
 
         Size size = this->size();
         auto _expr1 = derived().mul(expr2).sum();
@@ -354,7 +369,6 @@ public:
         auto mat = (derived() - derived().mean()).eval();
         return mat.adjoint() * mat / (mat.size() - dof);
     }
-    // TODO cov with self?
 
     auto bmean(Size size) const { return derived().bsum(size) / size; }
     auto mean() const { return derived().sum() / (this->size()); }
@@ -428,7 +442,7 @@ public:
     auto dot(const Expr2& expr2) const
     {
         const auto& expr1 = derived();
-        TENSE_TASSERT(this->size(), ==, expr2.size(), "dot", "Vector sizes must be the same")
+        TENSE_VASSERT(this->size(), ==, expr2.size(), "dot", "Vector sizes must be the same")
         return expr1.mul(expr2).sum();
     }
 
@@ -436,24 +450,24 @@ public:
 
     static auto init(Size size, Type val)
     {
-        TENSE_TASSERT(size, >, 0, "init", "Input size can't be zero")
+        TENSE_VASSERT(size, >, 0, "init", "Input size can't be zero")
         return Constant<Type>(size, val);
     }
     template <typename Dist>
-    static auto dist(Size size, Dist dist)
+    static auto dist(Size size, Dist&& dist)
     {
-        TENSE_TASSERT(size, >, 0, "dist", "Input size can't be zero")
-        return Distribution<Type, Dist>(size, dist);
+        TENSE_VASSERT(size, >, 0, "dist", "Input size can't be zero")
+        return Distribution<Type, Dist>(size, std::forward<Dist>(dist));
     }
     static auto seq(Size size, Type start, Type end)
     {
-        TENSE_TASSERT(size, >, 0, "seq", "Input size can't be zero")
+        TENSE_VASSERT(size, >, 0, "seq", "Input size can't be zero")
         auto step = (end - start) / size;
         return Sequence<Type>(size, start, step);
     }
     static auto strided(Size size, Type* data, Size rstride, Size cstride)
     {
-        TENSE_TASSERT(size, >, 0, "seq", "Input size can't be zero")
+        TENSE_VASSERT(size, >, 0, "seq", "Input size can't be zero")
         return Strided<Type>(size, data, rstride, cstride);
     }
     template <Size Count>
@@ -471,7 +485,7 @@ public:
     template <Size Count>
     static auto stat(const std::initializer_list<Type>& list)
     {
-        TENSE_TASSERT(list.size(), ==, Count, "stat", "Vector size must match initializer list")
+        TENSE_VASSERT(list.size(), ==, Count, "stat", "Vector size must match initializer list")
         auto target = stat<Count>();
         Eval::assign(target, list);
         return target;
@@ -500,7 +514,7 @@ public:
         else if constexpr (std::is_floating_point<Type>::value)
             return dist(size, std::uniform_real_distribution<Type>(a, b));
         else
-            throw std::runtime_error("Data type not supported in vector::uniform.");
+            static_assert(false, "Data type not supported in vector::uniform.");
     }
     static auto bernoulli(Size size, double p = 0.5) { return dist(size, std::bernoulli_distribution(p)); }
     static auto binomial(Size size, int t, double p = 0.5) { return dist(size, std::binomial_distribution(t, p)); }
@@ -546,7 +560,6 @@ public:
     {
         return sort([](auto i, auto j) { return i < j; });
     }
-    // TODO sortidx
 
     auto shuffle() const
     {
@@ -554,7 +567,6 @@ public:
         Backend::shuffle(target);
         return target;
     }
-    // TODO shuffleidx
 
     ////////////////////////////////////////////////////////////////////////////
 

@@ -755,7 +755,6 @@ EXPR(Distribution, Readable, M, T, M C T C Dist, _rows, _cols)
     std::mt19937_64 _rand;
     const Size _rows, _cols;
     Type operator()(Size i, Size j) { return Type(_dist(_rand)); }
-    // TODO not thread-safe (vector, matrix, tensor)
 
 public:
     Distribution(Size rows, Size cols, Dist dist) : _dist(std::move(dist)), _rand(rand()), _rows(rows), _cols(cols) {}
@@ -786,7 +785,6 @@ public:
 template <typename M, typename T, Size Rows, Size Cols>
 FLAGGED(Static, StaticFlag, Writable, M, T, M C T C Rows C Cols, Rows, Cols)
     T _data[Rows * Cols];
-    // TODO Alias might cause temp static to be held as reference (vector, matrix, tensor)
 
 public:
     Static(T value) { std::fill(_data, _data + Rows * Cols, value); }

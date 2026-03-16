@@ -138,12 +138,14 @@ public:
         _shared->owner = false;
         _shared->data = nullptr;
         _shared->size = 0;
+        _shared = DataPtr();
         return data;
     }
     Tensor<Type> wrap(Mode mode = Mode::Hold)
     {
+        Shape shape{this->size()};
         auto data = mode == Mode::Own ? this->release() : this->data();
-        return Tensor<Type>({this->size()}, data, mode);
+        return Tensor<Type>(shape, data, mode);
     }
     const Derived& eval() const { return *this; }
 

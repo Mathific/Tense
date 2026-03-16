@@ -286,7 +286,7 @@ struct GetExpr
 template <typename T>
 struct GetExpr<T, typename std::enable_if<CheckExpr<T>::value>::type>
 {
-    using Type = typename T::Expr;
+    using Type = T;
 };
 
 template <typename _T>

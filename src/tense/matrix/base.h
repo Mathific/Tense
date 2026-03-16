@@ -1012,8 +1012,6 @@ public:
     {
         return csortidx([](auto i, auto j) { return i < j; });
     }
-    // TODO sortidx?
-    // TODO sort/shuffle idx functions should be heavy aware
 
     auto rshuffle() const
     {

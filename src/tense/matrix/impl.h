@@ -155,12 +155,14 @@ public:
         _shared->data = nullptr;
         _shared->rows = 0;
         _shared->cols = 0;
+        _shared = DataPtr();
         return data;
     }
     Tensor<Type> wrap(Mode mode = Mode::Hold)
     {
+        Shape shape{this->rows(), this->cols()};
         auto data = mode == Mode::Own ? this->release() : this->data();
-        return Tensor<Type>({this->rows(), this->cols()}, data, mode);
+        return Tensor<Type>(shape, data, mode);
     }
     const Derived& eval() const { return *this; }
 
